@@ -3,7 +3,7 @@ const {Slice, Fragment} = require("../model")
 const browser = require("../util/browser")
 const Keymap = require("browserkeymap")
 const {charCategory, isExtendingChar} = require("../util/char")
-const {Selection, TextSelection, NodeSelection} = require("../edit")
+const {Selection, TextSelection, NodeSelection} = require("../selection")
 
 // !! This module exports a number of ‘commands‘, functions that take
 // a ProseMirror instance and try to perform some action on it,
