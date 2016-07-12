@@ -108,7 +108,7 @@ function joinForward(state, apply) {
 
   // If the node doesn't allow children, delete it
   if (after.type.isLeaf) {
-    return apply === false ? true
+    return apply === false ? state
       : state.tr.delete(cut, cut + after.nodeSize).applyAndScroll()
   } else {
     // Apply the joining algorithm
@@ -207,7 +207,7 @@ function lift(state, apply) {
   let {$from, $to} = state.selection
   let range = $from.blockRange($to), target = range && liftTarget(range)
   if (target == null) return null
-  return apply === false ? true : state.tr.lift(range, target).applyAndScroll()
+  return apply === false ? state : state.tr.lift(range, target).applyAndScroll()
 }
 exports.lift = lift
 
@@ -218,7 +218,7 @@ function newlineInCode(state, apply) {
   let {$from, $to, node} = state.selection
   if (node) return null
   if (!$from.parent.type.isCode || $to.pos >= $from.end()) return null
-  return apply === false ? true : state.tr.typeText("\n").applyAndScroll()
+  return apply === false ? state : state.tr.typeText("\n").applyAndScroll()
 }
 exports.newlineInCode = newlineInCode
 
@@ -247,11 +247,11 @@ function liftEmptyBlock(state, apply) {
   if ($head.depth > 1 && $head.after() != $head.end(-1)) {
     let before = $head.before()
     if (canSplit(state.doc, before))
-      return apply === false ? true : state.tr.split(before).applyAndScroll()
+      return apply === false ? state : state.tr.split(before).applyAndScroll()
   }
   let range = $head.blockRange(), target = range && liftTarget(range)
   if (target == null) return null
-  return apply === false ? true : state.tr.lift(range, target).applyAndScroll()
+  return apply === false ? state : state.tr.lift(range, target).applyAndScroll()
 }
 exports.liftEmptyBlock = liftEmptyBlock
 
@@ -262,7 +262,7 @@ function splitBlock(state, apply) {
   let {$from, $to, node} = state.selection
   if (node && node.isBlock) {
     if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return null
-    return apply === false ? true : state.tr.split($from.pos).applyAndScroll()
+    return apply === false ? state : state.tr.split($from.pos).applyAndScroll()
   } else {
     if (apply === false) return state
     let atEnd = $to.parentOffset == $to.parent.content.size
@@ -297,7 +297,7 @@ function selectParentNode(state, apply) {
     if (same == 0) return null
     pos = sel.$head.before(same)
   }
-  return apply === false ? true : new NodeSelection(state.doc.resolve(pos)).apply()
+  return apply === false ? state : new NodeSelection(state.doc.resolve(pos)).apply()
 }
 exports.selectParentNode = selectParentNode
 
@@ -305,7 +305,7 @@ exports.selectParentNode = selectParentNode
 // Undo the most recent change event, if any.
 function undo(state, apply) {
   if (!state.history || state.history.undoDepth == 0) return null
-  return apply === false ? true : {type: "undo"} // FIXME state update
+  return apply === false ? state : state.history.undo(state)
 }
 exports.undo = undo
 
@@ -313,7 +313,7 @@ exports.undo = undo
 // Redo the most recently undone change event, if any.
 function redo(state, apply) {
   if (!state.history || state.history.redoDepth == 0) return null
-  return apply === false ? true : {type: "redo"} // FIXME
+  return apply === false ? state : state.history.redo(state)
 }
 exports.redo = redo
 
@@ -340,7 +340,7 @@ function deleteBarrier(state, cut, apply) {
     let selAfter = Selection.findFrom($cut, 1)
     let range = selAfter.$from.blockRange(selAfter.$to), target = range && liftTarget(range)
     if (target == null) return null
-    return apply === false ? true : state.tr.lift(range, target).applyAndScroll()
+    return apply === false ? state : state.tr.lift(range, target).applyAndScroll()
   }
 }
 
@@ -431,7 +431,7 @@ function wrapIn(nodeType, attrs) {
     let {$from, $to} = state.selection
     let range = $from.blockRange($to), wrapping = range && findWrapping(range, nodeType, attrs)
     if (!wrapping) return null
-    return apply === false ? true : state.tr.wrap(range, wrapping).applyAndScroll()
+    return apply === false ? state : state.tr.wrap(range, wrapping).applyAndScroll()
   }
 }
 exports.wrapIn = wrapIn
