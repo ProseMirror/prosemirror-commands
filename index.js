@@ -541,11 +541,11 @@ let baseKeymap = {
 if (mac) {
   let extra = {
     "Ctrl-KeyH": baseKeymap.lookup("Backspace"),
-    "Alt-Backspace": baseKeymap.lookup("Mod-Backspace"),
+    "Alt-Backspace": baseKeymap.lookup("Cmd-Backspace"),
     "Ctrl-KeyD": baseKeymap.lookup("Delete"),
-    "Ctrl-Alt-Backspace": baseKeymap.lookup("Mod-Delete"),
-    "Alt-Delete": baseKeymap.lookup("Mod-Delete"),
-    "Alt-KeyD": baseKeymap.lookup("Mod-Delete")
+    "Ctrl-Alt-Backspace": baseKeymap.lookup("Cmd-Delete"),
+    "Alt-Delete": baseKeymap.lookup("Cmd-Delete"),
+    "Alt-KeyD": baseKeymap.lookup("Cmd-Delete")
   }
   for (let prop in extra) baseKeymap[prop] = extra[prop]
 }
