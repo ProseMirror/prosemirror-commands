@@ -1,6 +1,6 @@
 const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("../transform")
 const {Slice, Fragment} = require("../model")
-const browser = require("../util/browser")
+const browser = require("../util/platform")
 const Keymap = require("browserkeymap")
 const {charCategory, isExtendingChar} = require("../util/char")
 const {Selection, TextSelection, NodeSelection} = require("../selection")
@@ -112,7 +112,7 @@ function joinForward(state, apply) {
       : state.tr.delete(cut, cut + after.nodeSize).applyAndScroll()
   } else {
     // Apply the joining algorithm
-    return deleteBarrier(state, cut, true)
+    return deleteBarrier(state, cut, apply)
   }
 }
 exports.joinForward = joinForward
