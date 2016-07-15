@@ -1,6 +1,6 @@
 const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("../transform")
 const {Slice, Fragment} = require("../model")
-const browser = require("../util/platform")
+const {ios, mac} = require("../util/platform")
 const Keymap = require("browserkeymap")
 const {charCategory, isExtendingChar} = require("../util/char")
 const {Selection, TextSelection, NodeSelection} = require("../selection")
@@ -121,7 +121,6 @@ exports.joinForward = joinForward
 // Delete the character before the cursor, if the selection is empty
 // and the cursor isn't at the start of a textblock.
 function deleteCharBefore(state, apply) {
-  if (browser.ios) return null
   let {$head, empty} = state.selection
   if (!empty || $head.parentOffset == 0) return null
   if (apply === false) return state
@@ -520,7 +519,7 @@ exports.toggleMark = toggleMark
 let baseKeymap = new Keymap({
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
 
-  "Backspace": chainCommands(deleteSelection, joinBackward, deleteCharBefore),
+  "Backspace": ios ? chainCommands(deleteSelection, joinBackward) : chainCommands(deleteSelection, joinBackward, deleteCharBefore),
   "Mod-Backspace": chainCommands(deleteSelection, joinBackward, deleteWordBefore),
   "Delete": chainCommands(deleteSelection, joinForward, deleteCharAfter),
   "Mod-Delete": chainCommands(deleteSelection, joinForward, deleteWordAfter),
@@ -535,7 +534,7 @@ let baseKeymap = new Keymap({
   "Shift-Mod-Z": redo
 })
 
-if (browser.mac) baseKeymap = baseKeymap.update({
+if (mac) baseKeymap = baseKeymap.update({
   "Ctrl-H": baseKeymap.lookup("Backspace"),
   "Alt-Backspace": baseKeymap.lookup("Mod-Backspace"),
   "Ctrl-D": baseKeymap.lookup("Delete"),
