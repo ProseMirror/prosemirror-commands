@@ -296,7 +296,7 @@ function selectParentNode(state, apply) {
     if (same == 0) return null
     pos = sel.$head.before(same)
   }
-  return apply === false ? state : new NodeSelection(state.doc.resolve(pos)).apply()
+  return apply === false ? state : state.applySelection(new NodeSelection(state.doc.resolve(pos)))
 }
 exports.selectParentNode = selectParentNode
 
