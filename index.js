@@ -304,7 +304,7 @@ exports.selectParentNode = selectParentNode
 // Undo the most recent change event, if any.
 function undo(state, apply) {
   if (!state.history || state.history.undoDepth == 0) return null
-  return apply === false ? state : state.history.undo(state)
+  return apply === false ? state : state.undo()
 }
 exports.undo = undo
 
@@ -312,7 +312,7 @@ exports.undo = undo
 // Redo the most recently undone change event, if any.
 function redo(state, apply) {
   if (!state.history || state.history.redoDepth == 0) return null
-  return apply === false ? state : state.history.redo(state)
+  return apply === false ? state : state.redo()
 }
 exports.redo = redo
 
