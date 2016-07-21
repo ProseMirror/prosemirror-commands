@@ -15,39 +15,37 @@ const {Selection, TextSelection, NodeSelection} = require("../state")
 // where the function won't take any actual action, but will return
 // information about whether it applies.
 
-// :: (...[(EditorState, ?bool) → ?EditorState]) → (EditorState, ?bool) → ?EditorState
+// :: (...[(EditorState, ?bool) → bool]) → (EditorState, ?bool) → bool
 // Combine a number of command functions into a single function (which
 // calls them one by one until one returns something other than
 // `false`).
 function chainCommands(...commands) {
-  return function(state, apply) {
-    for (let i = 0; i < commands.length; i++) {
-      let val = commands[i](state, apply)
-      if (val) return val
-    }
+  return function(state, onAction) {
+    for (let i = 0; i < commands.length; i++)
+      if (commands[i](state, onAction)) return true
+    return false
   }
 }
 exports.chainCommands = chainCommands
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Delete the selection, if there is one.
-function deleteSelection(state, apply) {
-  if (state.selection.empty) return null
-  return apply === false ? state : state.tr.replaceSelection().applyAndScroll()
+function deleteSelection(state, onAction) {
+  if (state.selection.empty) return false
+  if (onAction) onAction(state.tr.replaceSelection().scrollAction())
+  return true
 }
 exports.deleteSelection = deleteSelection
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // If the selection is empty and at the start of a textblock, move
 // that block closer to the block before it, by lifting it out of its
 // parent or, if it has no parent it doesn't share with the node
 // before it, moving it into a parent of that node, or joining it with
 // that.
-function joinBackward(state, apply) {
+function joinBackward(state, onAction) {
   let {$head, empty} = state.selection
-  if (!empty) return null
-
-  if ($head.parentOffset > 0) return null
+  if (!empty || $head.parentOffset > 0) return false
 
   // Find the node before this one
   let before, cut
@@ -59,39 +57,42 @@ function joinBackward(state, apply) {
   // If there is no node before this, try to lift
   if (!before) {
     let range = $head.blockRange(), target = range && liftTarget(range)
-    if (target == null) return null
-    return apply === false ? state : state.tr.lift(range, target).applyAndScroll()
+    if (target == null) return false
+    if (onAction) onAction(state.tr.lift(range, target).scrollAction())
+    return true
   }
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
   if (before.type.isLeaf && before.type.selectable && $head.parent.content.size == 0) {
-    if (apply === false) return state
-    let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
-    tr.setSelection(new NodeSelection(tr.doc.resolve(cut - before.nodeSize)))
-    return tr.applyAndScroll()
+    if (onAction) {
+      let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
+      tr.setSelection(new NodeSelection(tr.doc.resolve(cut - before.nodeSize)))
+      onAction(tr.scrollAction())
+    }
+    return true
   }
 
   // If the node doesn't allow children, delete it
   if (before.type.isLeaf) {
-    if (apply === false) return state
-    return state.tr.delete(cut - before.nodeSize, cut).applyAndScroll()
+    if (onAction) onAction(state.tr.delete(cut - before.nodeSize, cut).scrollAction())
+    return true
   }
 
   // Apply the joining algorithm
-  return deleteBarrier(state, cut, apply)
+  return deleteBarrier(state, cut, onAction)
 }
 exports.joinBackward = joinBackward
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // If the selection is empty and the cursor is at the end of a
 // textblock, move the node after it closer to the node with the
 // cursor (lifting it out of parents that aren't shared, moving it
 // into parents of the cursor block, or joining the two when they are
 // siblings).
-function joinForward(state, apply) {
+function joinForward(state, onAction) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset < $head.parent.content.size) return null
+  if (!empty || $head.parentOffset < $head.parent.content.size) return false
 
   // Find the node after this one
   let after, cut
@@ -104,166 +105,180 @@ function joinForward(state, apply) {
   }
 
   // If there is no node after this, there's nothing to do
-  if (!after) return null
+  if (!after) return false
 
   // If the node doesn't allow children, delete it
   if (after.type.isLeaf) {
-    return apply === false ? state
-      : state.tr.delete(cut, cut + after.nodeSize).applyAndScroll()
-  } else {
-    // Apply the joining algorithm
-    return deleteBarrier(state, cut, apply)
+    if (onAction) onAction(state.tr.delete(cut, cut + after.nodeSize).scrollAction())
+    return true
   }
+  // Apply the joining algorithm
+  return deleteBarrier(state, cut, onAction)
 }
 exports.joinForward = joinForward
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Delete the character before the cursor, if the selection is empty
 // and the cursor isn't at the start of a textblock.
-function deleteCharBefore(state, apply) {
+function deleteCharBefore(state, onAction) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == 0) return null
-  if (apply === false) return state
-  let dest = moveBackward($head, "char")
-  return state.tr.delete(dest, $head.pos).applyAndScroll()
+  if (!empty || $head.parentOffset == 0) return false
+  if (onAction) {
+    let dest = moveBackward($head, "char")
+    onAction(state.tr.delete(dest, $head.pos).scrollAction())
+  }
+  return true
 }
 exports.deleteCharBefore = deleteCharBefore
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Delete the word before the cursor, if the selection is empty and
 // the cursor isn't at the start of a textblock.
-function deleteWordBefore(state, apply) {
+function deleteWordBefore(state, onAction) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == 0) return null
-  if (apply === false) return state
-  let dest = moveBackward($head, "word")
-  return state.tr.delete(dest, $head.pos).applyAndScroll()
+  if (!empty || $head.parentOffset == 0) return false
+  if (onAction)
+    onAction(state.tr.delete(moveBackward($head, "word"), $head.pos).scrollAction())
+  return true
 }
 exports.deleteWordBefore = deleteWordBefore
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Delete the character after the cursor, if the selection is empty
 // and the cursor isn't at the end of its textblock.
-function deleteCharAfter(state, apply) {
+function deleteCharAfter(state, onAction) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == $head.parent.content.size) return null
-  if (apply === false) return state
-  let dest = moveForward($head, "char")
-  return state.tr.delete($head.pos, dest).applyAndScroll()
+  if (!empty || $head.parentOffset == $head.parent.content.size) return false
+  if (onAction)
+    onAction(state.tr.delete($head.pos, moveForward($head, "char")).scrollAction())
+  return true
 }
 exports.deleteCharAfter = deleteCharAfter
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Delete the word after the cursor, if the selection is empty and the
 // cursor isn't at the end of a textblock.
-function deleteWordAfter(state, apply) {
+function deleteWordAfter(state, onAction) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == $head.parent.content.size) return null
-  if (apply === false) return state
-  let dest = moveForward($head, "word")
-  return state.tr.delete($head.pos, dest).applyAndScroll()
+  if (!empty || $head.parentOffset == $head.parent.content.size) return false
+  if (onAction)
+    onAction(state.tr.delete($head.pos, moveForward($head, "word")).scrollAction())
+  return true
 }
 exports.deleteWordAfter = deleteWordAfter
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Join the selected block or, if there is a text selection, the
 // closest ancestor block of the selection that can be joined, with
 // the sibling above it.
-function joinUp(state, apply) {
+function joinUp(state, onAction) {
   let {node, from} = state.selection, point
   if (node) {
-    if (node.isTextblock || !joinable(state.doc, from)) return null
+    if (node.isTextblock || !joinable(state.doc, from)) return false
     point = from
   } else {
     point = joinPoint(state.doc, from, -1)
-    if (point == null) return null
+    if (point == null) return false
   }
-  if (apply === false) return state
-  let tr = state.tr.join(point)
-  if (state.selection.node) tr.setSelection(new NodeSelection(tr.doc.resolve(point - state.doc.resolve(point).nodeBefore.nodeSize)))
-  return tr.applyAndScroll()
+  if (onAction) {
+    let tr = state.tr.join(point)
+    if (state.selection.node) tr.setSelection(new NodeSelection(tr.doc.resolve(point - state.doc.resolve(point).nodeBefore.nodeSize)))
+    onAction(tr.scrollAction())
+  }
+  return true
 }
 exports.joinUp = joinUp
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Join the selected block, or the closest ancestor of the selection
 // that can be joined, with the sibling after it.
-function joinDown(state, apply) {
+function joinDown(state, onAction) {
   let node = state.selection.node, nodeAt = state.selection.from
   let point = joinPointBelow(state)
-  if (!point) return null
-  if (apply === false) return state
-  let tr = state.tr.join(point)
-  if (node) tr.setSelection(new NodeSelection(tr.doc.resolve(nodeAt)))
-  return tr.applyAndScroll()
+  if (!point) return false
+  if (onAction) {
+    let tr = state.tr.join(point)
+    if (node) tr.setSelection(new NodeSelection(tr.doc.resolve(nodeAt)))
+    onAction(tr.scrollAction())
+  }
+  return true
 }
 exports.joinDown = joinDown
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Lift the selected block, or the closest ancestor block of the
 // selection that can be lifted, out of its parent node.
-function lift(state, apply) {
+function lift(state, onAction) {
   let {$from, $to} = state.selection
   let range = $from.blockRange($to), target = range && liftTarget(range)
-  if (target == null) return null
-  return apply === false ? state : state.tr.lift(range, target).applyAndScroll()
+  if (target == null) return false
+  if (onAction) onAction(state.tr.lift(range, target).scrollAction())
+  return true
 }
 exports.lift = lift
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // If the selection is in a node whose type has a truthy `isCode`
 // property, replace the selection with a newline character.
-function newlineInCode(state, apply) {
+function newlineInCode(state, onAction) {
   let {$from, $to, node} = state.selection
-  if (node) return null
-  if (!$from.parent.type.isCode || $to.pos >= $from.end()) return null
-  return apply === false ? state : state.tr.typeText("\n").applyAndScroll()
+  if (node) return false
+  if (!$from.parent.type.isCode || $to.pos >= $from.end()) return false
+  if (onAction) onAction(state.tr.typeText("\n").scrollAction())
+  return true
 }
 exports.newlineInCode = newlineInCode
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // If a block node is selected, create an empty paragraph before (if
 // it is its parent's first child) or after it.
-function createParagraphNear(state, apply) {
+function createParagraphNear(state, onAction) {
   let {$from, $to, node} = state.selection
-  if (!node || !node.isBlock) return null
+  if (!node || !node.isBlock) return false
   let type = $from.parent.defaultContentType($to.indexAfter())
-  if (!type || !type.isTextblock) return null
-  if (apply === false) return state
-  let side = ($from.parentOffset ? $to : $from).pos
-  let tr = state.tr.insert(side, type.createAndFill())
-  tr.setSelection(new TextSelection(tr.doc.resolve(side + 1)))
-  return tr.applyAndScroll()
+  if (!type || !type.isTextblock) return false
+  if (onAction) {
+    let side = ($from.parentOffset ? $to : $from).pos
+    let tr = state.tr.insert(side, type.createAndFill())
+    tr.setSelection(new TextSelection(tr.doc.resolve(side + 1)))
+    onAction(tr.scrollAction())
+  }
+  return true
 }
 exports.createParagraphNear = createParagraphNear
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // If the cursor is in an empty textblock that can be lifted, lift the
 // block.
-function liftEmptyBlock(state, apply) {
+function liftEmptyBlock(state, onAction) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parent.content.size) return null
+  if (!empty || $head.parent.content.size) return false
   if ($head.depth > 1 && $head.after() != $head.end(-1)) {
     let before = $head.before()
-    if (canSplit(state.doc, before))
-      return apply === false ? state : state.tr.split(before).applyAndScroll()
+    if (canSplit(state.doc, before)) {
+      if (onAction) onAction(state.tr.split(before).scrollAction())
+      return true
+    }
   }
   let range = $head.blockRange(), target = range && liftTarget(range)
-  if (target == null) return null
-  return apply === false ? state : state.tr.lift(range, target).applyAndScroll()
+  if (target == null) return false
+  if (onAction) onAction(state.tr.lift(range, target).scrollAction())
+  return true
 }
 exports.liftEmptyBlock = liftEmptyBlock
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Split the parent block of the selection. If the selection is a text
 // selection, delete it.
-function splitBlock(state, apply) {
+function splitBlock(state, onAction) {
   let {$from, $to, node} = state.selection
   if (node && node.isBlock) {
-    if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return null
-    return apply === false ? state : state.tr.split($from.pos).applyAndScroll()
-  } else {
-    if (apply === false) return state
+    if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return false
+    if (onAction) onAction(state.tr.split($from.pos).scrollAction())
+    return true
+  }
+
+  if (onAction) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr.delete($from.pos, $to.pos)
     let deflt = $from.depth == 0 ? null : $from.node(-1).defaultContentType($from.indexAfter(-1))
@@ -278,68 +293,59 @@ function splitBlock(state, apply) {
       if (!atEnd && !$from.parentOffset && $from.parent.type != deflt)
         tr.setNodeType($from.before(), deflt)
     }
-    return tr.applyAndScroll()
+    onAction(tr.scrollAction())
   }
+  return true
 }
 exports.splitBlock = splitBlock
 
-// :: (EditorState, ?bool) → ?EditorState
+// :: (EditorState, ?bool) → bool
 // Move the selection to the node wrapping the current selection, if
 // any. (Will not select the document node.)
-function selectParentNode(state, apply) {
+function selectParentNode(state, onAction) {
   let sel = state.selection, pos
   if (sel.node) {
-    if (!sel.$from.depth) return null
+    if (!sel.$from.depth) return false
     pos = sel.$from.before()
   } else {
     let same = sel.$head.sameDepth(sel.$anchor)
-    if (same == 0) return null
+    if (same == 0) return false
     pos = sel.$head.before(same)
   }
-  return apply === false ? state : state.applySelection(new NodeSelection(state.doc.resolve(pos)))
+  if (onAction) onAction(new NodeSelection(state.doc.resolve(pos)).action())
+  return true
 }
 exports.selectParentNode = selectParentNode
 
-// :: (EditorState, ?bool) → ?EditorState
-// Undo the most recent change event, if any.
-function undo(state, apply) {
-  if (!state.history || state.history.undoDepth == 0) return null
-  return apply === false ? state : state.undo()
-}
-exports.undo = undo
-
-// :: (EditorState, ?bool) → ?EditorState
-// Redo the most recently undone change event, if any.
-function redo(state, apply) {
-  if (!state.history || state.history.redoDepth == 0) return null
-  return apply === false ? state : state.redo()
-}
-exports.redo = redo
-
-function deleteBarrier(state, cut, apply) {
+function deleteBarrier(state, cut, onAction) {
   let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn
   if (joinable(state.doc, cut)) {
-    if (apply === false) return state
-    let tr = state.tr.join(cut)
-    if (tr.steps.length && before.content.size == 0 && !before.sameMarkup(after) &&
-        $cut.parent.canReplace($cut.index() - 1, $cut.index()))
-      tr.setNodeType(cut - before.nodeSize, after.type, after.attrs)
-    return tr.applyAndScroll()
+    if (onAction) {
+      let tr = state.tr.join(cut)
+      if (tr.steps.length && before.content.size == 0 && !before.sameMarkup(after) &&
+          $cut.parent.canReplace($cut.index() - 1, $cut.index()))
+        tr.setNodeType(cut - before.nodeSize, after.type, after.attrs)
+      onAction(tr.scrollAction())
+    }
+    return true
   } else if (after.isTextblock && (conn = before.contentMatchAt($cut.index()).findWrapping(after.type, after.attrs))) {
-    if (apply === false) return state
-    let end = cut + after.nodeSize, wrap = Fragment.empty
-    for (let i = conn.length - 1; i >= 0; i--)
-      wrap = Fragment.from(conn[i].type.create(conn[i].attrs, wrap))
-    wrap = Fragment.from(before.copy(wrap))
-    return state.tr
-      .step(new ReplaceAroundStep(cut - 1, end, cut, end, new Slice(wrap, 1, 0), conn.length, true))
-      .join(end + 2 * conn.length, 1, true)
-      .applyAndScroll()
+    if (onAction) {
+      let end = cut + after.nodeSize, wrap = Fragment.empty
+      for (let i = conn.length - 1; i >= 0; i--)
+        wrap = Fragment.from(conn[i].type.create(conn[i].attrs, wrap))
+      wrap = Fragment.from(before.copy(wrap))
+      onAction(state.tr
+               .step(new ReplaceAroundStep(cut - 1, end, cut, end, new Slice(wrap, 1, 0), conn.length, true))
+               .join(end + 2 * conn.length, 1, true)
+               .scrollAction())
+    }
+    return true
   } else {
     let selAfter = Selection.findFrom($cut, 1)
     let range = selAfter.$from.blockRange(selAfter.$to), target = range && liftTarget(range)
-    if (target == null) return null
-    return apply === false ? state : state.tr.lift(range, target).applyAndScroll()
+    if (target == null) return false
+    if (onAction) onAction(state.tr.lift(range, target).scrollAction())
+    return true
   }
 }
 
@@ -421,44 +427,47 @@ function joinPointBelow(state) {
   else return joinPoint(state.doc, to, 1)
 }
 
-// :: (NodeType, ?Object) → (state: EditorState, apply: ?bool) → ?EditorState
+// :: (NodeType, ?Object) → (state: EditorState, apply: ?bool) → bool
 // Wrap the selection in a node of the given type with the given
 // attributes. When `apply` is `false`, just tell whether this is
 // possible, without performing any action.
 function wrapIn(nodeType, attrs) {
-  return function(state, apply) {
+  return function(state, onAction) {
     let {$from, $to} = state.selection
     let range = $from.blockRange($to), wrapping = range && findWrapping(range, nodeType, attrs)
-    if (!wrapping) return null
-    return apply === false ? state : state.tr.wrap(range, wrapping).applyAndScroll()
+    if (!wrapping) return false
+    if (onAction) onAction(state.tr.wrap(range, wrapping).scrollAction())
+    return true
   }
 }
 exports.wrapIn = wrapIn
 
-// :: (NodeType, ?Object) → (state: EditorState, apply: ?bool) → ?EditorState
+// :: (NodeType, ?Object) → (state: EditorState, apply: ?bool) → bool
 // Try to the textblock around the selection to the given node type
 // with the given attributes. Return `true` when this is possible. If
 // `apply` is `false`, just report whether the change is possible,
 // don't perform any action.
 function setBlockType(nodeType, attrs) {
-  return function(state, apply) {
+  return function(state, onAction) {
     let {$from, $to, node} = state.selection, depth
     if (node) {
       depth = $from.depth
     } else {
-      if (!$from.depth || $to.pos > $from.end()) return null
+      if (!$from.depth || $to.pos > $from.end()) return false
       depth = $from.depth - 1
     }
     let target = node || $from.parent
-    if (!target.isTextblock || target.hasMarkup(nodeType, attrs)) return null
+    if (!target.isTextblock || target.hasMarkup(nodeType, attrs)) return false
     let index = $from.index(depth)
-    if (!$from.node(depth).canReplaceWith(index, index + 1, nodeType)) return null
-    if (apply === false) return state
-    let where = $from.before(depth + 1)
-    return state.tr
-      .clearMarkupFor(where, nodeType, attrs)
-      .setNodeType(where, nodeType, attrs)
-      .applyAndScroll()
+    if (!$from.node(depth).canReplaceWith(index, index + 1, nodeType)) return false
+    if (onAction) {
+      let where = $from.before(depth + 1)
+      onAction(state.tr
+               .clearMarkupFor(where, nodeType, attrs)
+               .setNodeType(where, nodeType, attrs)
+               .scrollAction())
+    }
+    return true
   }
 }
 exports.setBlockType = setBlockType
@@ -466,13 +475,13 @@ exports.setBlockType = setBlockType
 function markApplies(doc, from, to, type) {
   let can = false
   doc.nodesBetween(from, to, node => {
-    if (can) return null
+    if (can) return false
     can = node.isTextblock && node.contentMatchAt(0).allowsMark(type)
   })
   return can
 }
 
-// :: (MarkType, ?Object) → (state: EditorState, apply: ?bool) → ?EditorState
+// :: (MarkType, ?Object) → (state: EditorState, apply: ?bool) → bool
 // Create a command function that toggles the given mark with the
 // given attributes. Will return `false` when the current selection
 // doesn't support that mark. If `apply` is not `false`, it will
@@ -481,21 +490,23 @@ function markApplies(doc, from, to, type) {
 // [active marks](#ProseMirror.activeMarks) instead of a range of the
 // document.
 function toggleMark(markType, attrs) {
-  return function(state, apply) {
+  return function(state, onAction) {
     let {empty, from, to} = state.selection
-    if (!markApplies(state.doc, from, to, markType)) return null
-    if (apply === false) return state
-    if (empty) {
-      if (markType.isInSet(state.view.activeMarks()))
-        return state.removeActiveMark(markType)
-      else
-        return state.addActiveMark(markType.create(attrs))
-    } else {
-      if (state.doc.rangeHasMark(from, to, markType))
-        return state.tr.removeMark(from, to, markType).applyAndScroll()
-      else
-        return state.tr.addMark(from, to, markType.create(attrs)).applyAndScroll()
+    if (!markApplies(state.doc, from, to, markType)) return false
+    if (onAction) {
+      if (empty) {
+        if (markType.isInSet(state.view.activeMarks()))
+          onAction({type: "removeStoredMark", markType})
+        else
+          onAction({type: "addStoredMark", mark: markType.create(attrs)})
+      } else {
+        if (state.doc.rangeHasMark(from, to, markType))
+          onAction(state.tr.removeMark(from, to, markType).scrollAction())
+        else
+          onAction(state.tr.addMark(from, to, markType.create(attrs)).scrollAction())
+      }
     }
+    return true
   }
 }
 exports.toggleMark = toggleMark
@@ -527,11 +538,7 @@ let baseKeymap = new Keymap({
   "Alt-Up": joinUp,
   "Alt-Down": joinDown,
   "Mod-[": lift,
-  "Esc": selectParentNode,
-
-  "Mod-Z": undo,
-  "Mod-Y": redo,
-  "Shift-Mod-Z": redo
+  "Esc": selectParentNode
 })
 
 if (mac) baseKeymap = baseKeymap.update({
