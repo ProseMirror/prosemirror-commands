@@ -1,7 +1,6 @@
 const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("../transform")
 const {Slice, Fragment} = require("../model")
 const {ios, mac} = require("../util/platform")
-const Keymap = require("browserkeymap")
 const {charCategory, isExtendingChar} = require("../util/char")
 const {Selection, TextSelection, NodeSelection} = require("../state")
 
@@ -521,13 +520,11 @@ exports.toggleMark = toggleMark
 // * **Mod-Backspace** to `deleteSelection`, `joinBackward`, `deleteWordBefore`
 // * **Delete** to `deleteSelection`, `joinForward`, `deleteCharAfter`
 // * **Mod-Delete** to `deleteSelection`, `joinForward`, `deleteWordAfter`
-// * **Alt-Up** to `joinUp`
-// * **Alt-Down** to `joinDown`
-// * **Mod-[** to `lift`
-// * **Esc** to `selectParentNode`
-// * **Mod-Z** to `undo`
-// * **Mod-Y** and **Shift-Mod-Z** to `redo`
-let baseKeymap = new Keymap({
+// * **Alt-ArrowUp** to `joinUp`
+// * **Alt-ArrowDown** to `joinDown`
+// * **Mod-BracketLeft** to `lift`
+// * **Escape** to `selectParentNode`
+let baseKeymap = {
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
 
   "Backspace": ios ? chainCommands(deleteSelection, joinBackward) : chainCommands(deleteSelection, joinBackward, deleteCharBefore),
@@ -535,19 +532,22 @@ let baseKeymap = new Keymap({
   "Delete": chainCommands(deleteSelection, joinForward, deleteCharAfter),
   "Mod-Delete": chainCommands(deleteSelection, joinForward, deleteWordAfter),
 
-  "Alt-Up": joinUp,
-  "Alt-Down": joinDown,
-  "Mod-[": lift,
-  "Esc": selectParentNode
-})
+  "Alt-ArrowUp": joinUp,
+  "Alt-ArrowDown": joinDown,
+  "Mod-BracketLeft": lift,
+  "Escape": selectParentNode
+}
 
-if (mac) baseKeymap = baseKeymap.update({
-  "Ctrl-H": baseKeymap.lookup("Backspace"),
-  "Alt-Backspace": baseKeymap.lookup("Mod-Backspace"),
-  "Ctrl-D": baseKeymap.lookup("Delete"),
-  "Ctrl-Alt-Backspace": baseKeymap.lookup("Mod-Delete"),
-  "Alt-Delete": baseKeymap.lookup("Mod-Delete"),
-  "Alt-D": baseKeymap.lookup("Mod-Delete")
-})
+if (mac) {
+  let extra = {
+    "Ctrl-KeyH": baseKeymap.lookup("Backspace"),
+    "Alt-Backspace": baseKeymap.lookup("Mod-Backspace"),
+    "Ctrl-KeyD": baseKeymap.lookup("Delete"),
+    "Ctrl-Alt-Backspace": baseKeymap.lookup("Mod-Delete"),
+    "Alt-Delete": baseKeymap.lookup("Mod-Delete"),
+    "Alt-KeyD": baseKeymap.lookup("Mod-Delete")
+  }
+  for (let prop in extra) baseKeymap[prop] = extra[prop]
+}
 
 exports.baseKeymap = baseKeymap
