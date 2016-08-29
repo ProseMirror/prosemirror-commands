@@ -223,7 +223,7 @@ function newlineInCode(state, onAction) {
   let {$from, $to, node} = state.selection
   if (node) return false
   if (!$from.parent.type.isCode || $to.pos >= $from.end()) return false
-  if (onAction) onAction(state.tr.typeText("\n").scrollAction())
+  if (onAction) onAction(state.tr.insertText("\n").scrollAction())
   return true
 }
 exports.newlineInCode = newlineInCode
@@ -486,7 +486,7 @@ function markApplies(doc, from, to, type) {
 // doesn't support that mark. If `apply` is not `false`, it will
 // remove the mark if any marks of that type exist in the selection,
 // or add it otherwise. If the selection is empty, this applies to the
-// [active marks](#ProseMirror.activeMarks) instead of a range of the
+// [stored marks](#EditorState.view.storedMarkds) instead of a range of the
 // document.
 function toggleMark(markType, attrs) {
   return function(state, onAction) {
@@ -494,7 +494,7 @@ function toggleMark(markType, attrs) {
     if (!markApplies(state.doc, from, to, markType)) return false
     if (onAction) {
       if (empty) {
-        if (markType.isInSet(state.view.activeMarks()))
+        if (markType.isInSet(state.view.storedMarks || state.doc.marksAt(from)))
           onAction({type: "removeStoredMark", markType})
         else
           onAction({type: "addStoredMark", mark: markType.create(attrs)})
