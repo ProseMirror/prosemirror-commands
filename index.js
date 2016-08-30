@@ -63,7 +63,7 @@ function joinBackward(state, onAction) {
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
-  if (before.type.isLeaf && before.type.selectable && $head.parent.content.size == 0) {
+  if (before.isLeaf && before.type.selectable && $head.parent.content.size == 0) {
     if (onAction) {
       let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
       tr.setSelection(new NodeSelection(tr.doc.resolve(cut - before.nodeSize)))
@@ -73,7 +73,7 @@ function joinBackward(state, onAction) {
   }
 
   // If the node doesn't allow children, delete it
-  if (before.type.isLeaf) {
+  if (before.isLeaf) {
     if (onAction) onAction(state.tr.delete(cut - before.nodeSize, cut).scrollAction())
     return true
   }
@@ -107,7 +107,7 @@ function joinForward(state, onAction) {
   if (!after) return false
 
   // If the node doesn't allow children, delete it
-  if (after.type.isLeaf) {
+  if (after.isLeaf) {
     if (onAction) onAction(state.tr.delete(cut, cut + after.nodeSize).scrollAction())
     return true
   }
