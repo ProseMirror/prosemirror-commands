@@ -1,6 +1,6 @@
 const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("../transform")
 const {Slice, Fragment} = require("../model")
-const {ios, mac} = require("../util/platform")
+const {ios, mac} = require("./platform")
 const {charCategory, isExtendingChar} = require("../util/char")
 const {Selection, TextSelection, NodeSelection} = require("../state")
 
