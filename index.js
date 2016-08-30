@@ -1,7 +1,8 @@
 const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("../transform")
 const {Slice, Fragment} = require("../model")
 const {ios, mac} = require("./platform")
-const {charCategory, isExtendingChar} = require("../util/char")
+const {isExtendingCharAt} = require("extending-char")
+const {charCategory} = require("./char")
 const {Selection, TextSelection, NodeSelection} = require("../state")
 
 // !! This module exports a number of ‘commands‘, functions that take
@@ -364,7 +365,7 @@ function moveBackward($pos, by) {
 
     if (by == "char") {
       for (let i = offset - start; i > 0; i--) {
-        if (!isExtendingChar(node.text.charAt(i - 1)))
+        if (!isExtendingCharAt(node.text, i - 1))
           return pos - 1
         offset--
         pos--
@@ -400,7 +401,7 @@ function moveForward($pos, by) {
 
     if (by == "char") {
       for (let i = offset - start; i < node.text.length; i++) {
-        if (!isExtendingChar(node.text.charAt(i + 1)))
+        if (!isExtendingCharAt(node.text, i + 1))
           return pos + 1
         offset++
         pos++
