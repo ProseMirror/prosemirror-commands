@@ -15,7 +15,7 @@ const {Selection, TextSelection, NodeSelection} = require("../state")
 // where the function won't take any actual action, but will return
 // information about whether it applies.
 
-// :: (...[(EditorState, ?(action: Object)) → bool]) → (EditorState, ?(action: Object)) → bool
+// :: (...[(EditorState, ?(action: Action)) → bool]) → (EditorState, ?(action: Action)) → bool
 // Combine a number of command functions into a single function (which
 // calls them one by one until one returns something other than
 // `false`).
@@ -28,7 +28,7 @@ function chainCommands(...commands) {
 }
 exports.chainCommands = chainCommands
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Delete the selection, if there is one.
 function deleteSelection(state, onAction) {
   if (state.selection.empty) return false
@@ -37,7 +37,7 @@ function deleteSelection(state, onAction) {
 }
 exports.deleteSelection = deleteSelection
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // If the selection is empty and at the start of a textblock, move
 // that block closer to the block before it, by lifting it out of its
 // parent or, if it has no parent it doesn't share with the node
@@ -84,7 +84,7 @@ function joinBackward(state, onAction) {
 }
 exports.joinBackward = joinBackward
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // If the selection is empty and the cursor is at the end of a
 // textblock, move the node after it closer to the node with the
 // cursor (lifting it out of parents that aren't shared, moving it
@@ -117,7 +117,7 @@ function joinForward(state, onAction) {
 }
 exports.joinForward = joinForward
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Delete the character before the cursor, if the selection is empty
 // and the cursor isn't at the start of a textblock.
 function deleteCharBefore(state, onAction) {
@@ -131,7 +131,7 @@ function deleteCharBefore(state, onAction) {
 }
 exports.deleteCharBefore = deleteCharBefore
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Delete the word before the cursor, if the selection is empty and
 // the cursor isn't at the start of a textblock.
 function deleteWordBefore(state, onAction) {
@@ -143,7 +143,7 @@ function deleteWordBefore(state, onAction) {
 }
 exports.deleteWordBefore = deleteWordBefore
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Delete the character after the cursor, if the selection is empty
 // and the cursor isn't at the end of its textblock.
 function deleteCharAfter(state, onAction) {
@@ -155,7 +155,7 @@ function deleteCharAfter(state, onAction) {
 }
 exports.deleteCharAfter = deleteCharAfter
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Delete the word after the cursor, if the selection is empty and the
 // cursor isn't at the end of a textblock.
 function deleteWordAfter(state, onAction) {
@@ -167,7 +167,7 @@ function deleteWordAfter(state, onAction) {
 }
 exports.deleteWordAfter = deleteWordAfter
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Join the selected block or, if there is a text selection, the
 // closest ancestor block of the selection that can be joined, with
 // the sibling above it.
@@ -189,7 +189,7 @@ function joinUp(state, onAction) {
 }
 exports.joinUp = joinUp
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Join the selected block, or the closest ancestor of the selection
 // that can be joined, with the sibling after it.
 function joinDown(state, onAction) {
@@ -205,7 +205,7 @@ function joinDown(state, onAction) {
 }
 exports.joinDown = joinDown
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Lift the selected block, or the closest ancestor block of the
 // selection that can be lifted, out of its parent node.
 function lift(state, onAction) {
@@ -217,7 +217,7 @@ function lift(state, onAction) {
 }
 exports.lift = lift
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // If the selection is in a node whose type has a truthy `isCode`
 // property, replace the selection with a newline character.
 function newlineInCode(state, onAction) {
@@ -229,7 +229,7 @@ function newlineInCode(state, onAction) {
 }
 exports.newlineInCode = newlineInCode
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // If a block node is selected, create an empty paragraph before (if
 // it is its parent's first child) or after it.
 function createParagraphNear(state, onAction) {
@@ -247,7 +247,7 @@ function createParagraphNear(state, onAction) {
 }
 exports.createParagraphNear = createParagraphNear
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // If the cursor is in an empty textblock that can be lifted, lift the
 // block.
 function liftEmptyBlock(state, onAction) {
@@ -267,7 +267,7 @@ function liftEmptyBlock(state, onAction) {
 }
 exports.liftEmptyBlock = liftEmptyBlock
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Split the parent block of the selection. If the selection is a text
 // selection, delete it.
 function splitBlock(state, onAction) {
@@ -299,7 +299,7 @@ function splitBlock(state, onAction) {
 }
 exports.splitBlock = splitBlock
 
-// :: (EditorState, ?(action: Object)) → bool
+// :: (EditorState, ?(action: Action)) → bool
 // Move the selection to the node wrapping the current selection, if
 // any. (Will not select the document node.)
 function selectParentNode(state, onAction) {
@@ -427,7 +427,7 @@ function joinPointBelow(state) {
   else return joinPoint(state.doc, to, 1)
 }
 
-// :: (NodeType, ?Object) → (state: EditorState, onAction: ?(action: Object)) → bool
+// :: (NodeType, ?Object) → (state: EditorState, onAction: ?(action: Action)) → bool
 // Wrap the selection in a node of the given type with the given
 // attributes. When `apply` is `false`, just tell whether this is
 // possible, without performing any action.
@@ -442,7 +442,7 @@ function wrapIn(nodeType, attrs) {
 }
 exports.wrapIn = wrapIn
 
-// :: (NodeType, ?Object) → (state: EditorState, onAction: ?(action: Object)) → bool
+// :: (NodeType, ?Object) → (state: EditorState, onAction: ?(action: Action)) → bool
 // Try to the textblock around the selection to the given node type
 // with the given attributes. Return `true` when this is possible. If
 // `apply` is `false`, just report whether the change is possible,
@@ -481,21 +481,21 @@ function markApplies(doc, from, to, type) {
   return can
 }
 
-// :: (MarkType, ?Object) → (state: EditorState, onAction: ?(action: Object)) → bool
+// :: (MarkType, ?Object) → (state: EditorState, onAction: ?(action: Action)) → bool
 // Create a command function that toggles the given mark with the
 // given attributes. Will return `false` when the current selection
 // doesn't support that mark. If `apply` is not `false`, it will
 // remove the mark if any marks of that type exist in the selection,
 // or add it otherwise. If the selection is empty, this applies to the
-// [stored marks](#EditorState.view.storedMarkds) instead of a range of the
-// document.
+// [stored marks](#state.EditorState.storedMarks) instead of a
+// range of the document.
 function toggleMark(markType, attrs) {
   return function(state, onAction) {
     let {empty, from, to} = state.selection
     if (!markApplies(state.doc, from, to, markType)) return false
     if (onAction) {
       if (empty) {
-        if (markType.isInSet(state.view.storedMarks || state.doc.marksAt(from)))
+        if (markType.isInSet(state.storedMarks || state.doc.marksAt(from)))
           onAction({type: "removeStoredMark", markType})
         else
           onAction({type: "addStoredMark", mark: markType.create(attrs)})
