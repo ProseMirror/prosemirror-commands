@@ -5,15 +5,16 @@ const {isExtendingCharAt} = require("extending-char")
 const {charCategory} = require("./char")
 const {Selection, TextSelection, NodeSelection} = require("../state")
 
-// !! This module exports a number of ‘commands‘, functions that take
-// a ProseMirror instance and try to perform some action on it,
-// returning `false` if they don't apply. These are used to bind keys
-// to, and to define [menu items](#menu).
+// !! This module exports a number of ‘commands‘, which are building
+// block functions that encapsulate an editing action. A command
+// function takes an editor state and _optionally_ an `onAction`
+// function that it can use to take an action. It should return a
+// boolean that indicates whether it could perform any action. When no
+// `onAction` callback is passed, the command should do a 'dry run',
+// determining whether it is applicable, but not actually taking any
+// action.
 //
-// Most of the command functions defined here take a second, optional,
-// boolean parameter. This can be set to `false` to do a ‘dry run’,
-// where the function won't take any actual action, but will return
-// information about whether it applies.
+// These are used to bind keys to, and to define [menu items](#menu).
 
 // :: (...[(EditorState, ?(action: Action)) → bool]) → (EditorState, ?(action: Action)) → bool
 // Combine a number of command functions into a single function (which
@@ -511,7 +512,7 @@ function toggleMark(markType, attrs) {
 }
 exports.toggleMark = toggleMark
 
-// :: Keymap
+// :: Object
 // A basic keymap containing bindings not specific to any schema.
 // Binds the following keys (when multiple commands are listed, they
 // are chained with [`chainCommands`](#commands.chainCommands):
