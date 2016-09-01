@@ -14,7 +14,7 @@ const {Selection, TextSelection, NodeSelection} = require("../state")
 // determining whether it is applicable, but not actually taking any
 // action.
 //
-// These are used to bind keys to, and to define [menu items](#menu).
+// These are mostly used to bind keys to, and to define menu items.
 
 // :: (...[(EditorState, ?(action: Action)) → bool]) → (EditorState, ?(action: Action)) → bool
 // Combine a number of command functions into a single function (which
