@@ -1,9 +1,10 @@
-const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("../transform")
-const {Slice, Fragment} = require("../model")
-const {ios, mac} = require("./platform")
+const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
+const {Slice, Fragment} = require("prosemirror-model")
+const {Selection, TextSelection, NodeSelection} = require("prosemirror-state")
 const {isExtendingCharAt} = require("extending-char")
+
+const {ios, mac} = require("./platform")
 const {charCategory} = require("./char")
-const {Selection, TextSelection, NodeSelection} = require("../state")
 
 // :: (...[(EditorState, ?(action: Action)) → bool]) → (EditorState, ?(action: Action)) → bool
 // Combine a number of command functions into a single function (which
