@@ -1,17 +1,19 @@
 const {Schema} = require("prosemirror-model")
 const {EditorState} = require("prosemirror-state")
-const {schema, sameDoc, doc, blockquote, pre, h1, h2, p, li, ol, ul, em, hr} = require("prosemirror-model/test/build")
+const {schema, eq, doc, blockquote, pre, h1, h2, p, li, ol, ul, em, hr} = require("prosemirror-model/test/build")
 const ist = require("ist")
 const {selFor} = require("prosemirror-state/test/state")
 
 const {joinBackward, joinForward, deleteSelection, deleteCharBefore, deleteWordBefore,
        deleteCharAfter, deleteWordAfter, joinUp, joinDown, lift,
-       wrapIn, splitBlock, liftEmptyBlock, createParagraphNear, setBlockType} = require("../src/commands")
+       wrapIn, splitBlock, liftEmptyBlock, createParagraphNear, setBlockType,
+       selectParentNode} = require("../src/commands")
 
 function apply(doc, command, result) {
   let state = EditorState.create({doc, selection: selFor(doc)})
   command(state, action => state = state.applyAction(action))
-  ist(state.doc, result || doc, sameDoc)
+  ist(state.doc, result || doc, eq)
+  if (result && result.tag.a != null) ist(state.selection, selFor(result), eq)
 }
 
 describe("joinBackward", () => {
@@ -72,6 +74,14 @@ describe("deleteSelection", () => {
 
   it("deletes node selections", () =>
      apply(doc(p("foo"), "<a>", hr), deleteSelection, doc(p("foo"))))
+
+  it("moves selection after deleted node", () =>
+     apply(doc(p("a"), "<a>", p("b"), blockquote(p("c"))), deleteSelection,
+           doc(p("a"), blockquote(p("<a>c")))))
+
+  it("moves selection before deleted node at end", () =>
+     apply(doc(p("a"), "<a>", p("b")), deleteSelection,
+           doc(p("a<a>"))))
 })
 
 describe("deleteCharBefore", () => {
@@ -205,13 +215,13 @@ describe("joinUp", () => {
 
   it("can join selected block nodes", () =>
      apply(doc(ul(li(p("foo")), "<a>", li(p("bar")))), joinUp,
-           doc(ul(li(p("foo"), p("bar"))))))
+           doc(ul("<a>", li(p("foo"), p("bar"))))))
 })
 
 describe("joinDown", () => {
   it("joins parent blocks", () =>
      apply(doc(blockquote(p("foo<a>")), blockquote(p("bar"))), joinDown,
-           doc(blockquote(p("foo"), p("<a>bar")))))
+           doc(blockquote(p("foo<a>"), p("bar")))))
 
   it("doesn't join with the block before", () =>
      apply(doc(blockquote(p("foo")), blockquote(p("<a>bar"))), joinDown, null))
@@ -229,12 +239,12 @@ describe("joinDown", () => {
 
   it("can join selected nodes", () =>
      apply(doc(ul("<a>", li(p("foo")), li(p("bar")))), joinDown,
-           doc(ul(li(p("foo"), p("bar"))))))
+           doc(ul("<a>", li(p("foo"), p("bar"))))))
 })
 
 describe("lift", () => {
   it("lifts out of a parent block", () =>
-     apply(doc(blockquote(p("<a>foo"))), lift, doc(p("foo"))))
+     apply(doc(blockquote(p("<a>foo"))), lift, doc(p("<a>foo"))))
 
   it("splits the parent block when necessary", () =>
      apply(doc(blockquote(p("foo"), p("<a>bar"), p("baz"))), lift,
@@ -252,7 +262,7 @@ describe("lift", () => {
 
   it("can lift a node selection", () =>
      apply(doc(blockquote("<a>", ul(li(p("foo"))))), lift,
-           doc(ul(li(p("foo"))))))
+           doc("<a>", ul(li(p("foo"))))))
 
   it("lifts out of a nested list", () =>
      apply(doc(ul(li(p("one"), ul(li(p("<a>sub1")), li(p("sub2")))), li(p("two")))), lift,
@@ -390,4 +400,22 @@ describe("setBlockType", () => {
 
   it("clears marks when necessary", () =>
      apply(doc(p("fo<a>o", em("bar"))), setCode, doc(pre("foobar"))))
+})
+
+describe("selectParentNode", () => {
+  it("selects the whole textblock", () =>
+     apply(doc(ul(li(p("foo"), p("b<a>ar")), li(p("baz")))), selectParentNode,
+           doc(ul(li(p("foo"), "<a>", p("bar")), li(p("baz"))))))
+
+  it("goes one level up when on a block", () =>
+     apply(doc(ul(li(p("foo"), "<a>", p("bar")), li(p("baz")))), selectParentNode,
+           doc(ul("<a>", li(p("foo"), p("bar")), li(p("baz"))))))
+
+  it("goes further up", () =>
+     apply(doc(ul("<a>", li(p("foo"), p("bar")), li(p("baz")))), selectParentNode,
+           doc("<a>", ul(li(p("foo"), p("bar")), li(p("baz"))))))
+
+  it("stops at the top level", () =>
+     apply(doc("<a>", ul(li(p("foo"), p("bar")), li(p("baz")))), selectParentNode,
+           doc("<a>", ul(li(p("foo"), p("bar")), li(p("baz"))))))
 })
