@@ -281,7 +281,8 @@ function splitBlock(state, onAction) {
     }
     if (can) {
       tr.split($from.pos, 1, type)
-      if (!atEnd && !$from.parentOffset && $from.parent.type != deflt)
+      if (!atEnd && !$from.parentOffset && $from.parent.type != deflt &&
+          $from.node(-1).canReplace($from.index(-1), $from.indexAfter(-1), Fragment.from(deflt.create(), $from.parent)))
         tr.setNodeType($from.before(), deflt)
     }
     onAction(tr.scrollAction())
