@@ -1,6 +1,6 @@
 const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
 const {Slice, Fragment} = require("prosemirror-model")
-const {Selection, TextSelection, NodeSelection} = require("prosemirror-state")
+const {Selection, TextSelection, NodeSelection, isSelectable} = require("prosemirror-state")
 const {isExtendingCharAt} = require("extending-char")
 
 const {ios, mac} = require("./platform")
@@ -55,7 +55,7 @@ function joinBackward(state, onAction) {
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
-  if (before.isLeaf && before.type.selectable && $head.parent.content.size == 0) {
+  if (before.isLeaf && isSelectable(before) && $head.parent.content.size == 0) {
     if (onAction) {
       let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
       tr.setSelection(new NodeSelection(tr.doc.resolve(cut - before.nodeSize)))
@@ -209,12 +209,13 @@ function lift(state, onAction) {
 exports.lift = lift
 
 // :: (EditorState, ?(action: Action)) → bool
-// If the selection is in a node whose type has a truthy `isCode`
-// property, replace the selection with a newline character.
+// If the selection is in a node whose type has a truthy `code`
+// property in its spec, replace the selection with a newline
+// character.
 function newlineInCode(state, onAction) {
   let {$from, $to, node} = state.selection
   if (node) return false
-  if (!$from.parent.type.isCode || $to.pos >= $from.end()) return false
+  if (!$from.parent.type.spec.code || $to.pos >= $from.end()) return false
   if (onAction) onAction(state.tr.insertText("\n").scrollAction())
   return true
 }
