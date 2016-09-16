@@ -327,10 +327,10 @@ function deleteBarrier(state, cut, onAction) {
       for (let i = conn.length - 1; i >= 0; i--)
         wrap = Fragment.from(conn[i].type.create(conn[i].attrs, wrap))
       wrap = Fragment.from(before.copy(wrap))
-      onAction(state.tr
-               .step(new ReplaceAroundStep(cut - 1, end, cut, end, new Slice(wrap, 1, 0), conn.length, true))
-               .join(end + 2 * conn.length, 1, true)
-               .scrollAction())
+      let tr = state.tr.step(new ReplaceAroundStep(cut - 1, end, cut, end, new Slice(wrap, 1, 0), conn.length, true))
+      let joinAt = end + 2 * conn.length
+      if (joinable(tr.doc, joinAt)) tr.join(joinAt)
+      onAction(tr.scrollAction())
     }
     return true
   } else {
