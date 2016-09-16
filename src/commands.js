@@ -1,4 +1,4 @@
-const {joinPoint, joinable, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
+const {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
 const {Slice, Fragment} = require("prosemirror-model")
 const {Selection, TextSelection, NodeSelection, isSelectable} = require("prosemirror-state")
 const {isExtendingCharAt} = require("extending-char")
@@ -165,7 +165,7 @@ exports.deleteWordAfter = deleteWordAfter
 function joinUp(state, onAction) {
   let {node, from} = state.selection, point
   if (node) {
-    if (node.isTextblock || !joinable(state.doc, from)) return false
+    if (node.isTextblock || !canJoin(state.doc, from)) return false
     point = from
   } else {
     point = joinPoint(state.doc, from, -1)
@@ -312,7 +312,7 @@ exports.selectParentNode = selectParentNode
 
 function deleteBarrier(state, cut, onAction) {
   let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn
-  if (joinable(state.doc, cut)) {
+  if (canJoin(state.doc, cut)) {
     if (onAction) {
       let tr = state.tr.join(cut)
       if (tr.steps.length && before.content.size == 0 && !before.sameMarkup(after) &&
@@ -329,7 +329,7 @@ function deleteBarrier(state, cut, onAction) {
       wrap = Fragment.from(before.copy(wrap))
       let tr = state.tr.step(new ReplaceAroundStep(cut - 1, end, cut, end, new Slice(wrap, 1, 0), conn.length, true))
       let joinAt = end + 2 * conn.length
-      if (joinable(tr.doc, joinAt)) tr.join(joinAt)
+      if (canJoin(tr.doc, joinAt)) tr.join(joinAt)
       onAction(tr.scrollAction())
     }
     return true
@@ -416,7 +416,7 @@ function moveForward($pos, by) {
 
 function joinPointBelow(state) {
   let {node, to} = state.selection
-  if (node) return joinable(state.doc, to) ? to : null
+  if (node) return canJoin(state.doc, to) ? to : null
   else return joinPoint(state.doc, to, 1)
 }
 
