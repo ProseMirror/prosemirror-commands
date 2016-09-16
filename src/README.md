@@ -4,7 +4,7 @@ an editor state and _optionally_ an `onAction` function that it can
 use to take an action. It should return a boolean that indicates
 whether it could perform any action. When no `onAction` callback is
 passed, the command should do a 'dry run', determining whether it is
-applicable, but not actually taking any action.
+applicable, but not actually doing anything.
 
 These are mostly used to bind keys to, and to define menu items.
 

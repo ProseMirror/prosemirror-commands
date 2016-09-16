@@ -6,19 +6,6 @@ const {isExtendingCharAt} = require("extending-char")
 const {ios, mac} = require("./platform")
 const {charCategory} = require("./char")
 
-// :: (...[(EditorState, ?(action: Action)) → bool]) → (EditorState, ?(action: Action)) → bool
-// Combine a number of command functions into a single function (which
-// calls them one by one until one returns something other than
-// `false`).
-function chainCommands(...commands) {
-  return function(state, onAction) {
-    for (let i = 0; i < commands.length; i++)
-      if (commands[i](state, onAction)) return true
-    return false
-  }
-}
-exports.chainCommands = chainCommands
-
 // :: (EditorState, ?(action: Action)) → bool
 // Delete the selection, if there is one.
 function deleteSelection(state, onAction) {
@@ -209,9 +196,9 @@ function lift(state, onAction) {
 exports.lift = lift
 
 // :: (EditorState, ?(action: Action)) → bool
-// If the selection is in a node whose type has a truthy `code`
-// property in its spec, replace the selection with a newline
-// character.
+// If the selection is in a node whose type has a truthy
+// [`code`](#model.NodeSpec.code) property in its spec, replace the
+// selection with a newline character.
 function newlineInCode(state, onAction) {
   let {$from, $to, node} = state.selection
   if (node) return false
@@ -261,7 +248,7 @@ exports.liftEmptyBlock = liftEmptyBlock
 
 // :: (EditorState, ?(action: Action)) → bool
 // Split the parent block of the selection. If the selection is a text
-// selection, delete it.
+// selection, also delete its content.
 function splitBlock(state, onAction) {
   let {$from, $to, node} = state.selection
   if (node && node.isBlock) {
@@ -422,8 +409,7 @@ function joinPointBelow(state) {
 
 // :: (NodeType, ?Object) → (state: EditorState, onAction: ?(action: Action)) → bool
 // Wrap the selection in a node of the given type with the given
-// attributes. When `apply` is `false`, just tell whether this is
-// possible, without performing any action.
+// attributes.
 function wrapIn(nodeType, attrs) {
   return function(state, onAction) {
     let {$from, $to} = state.selection
@@ -436,10 +422,8 @@ function wrapIn(nodeType, attrs) {
 exports.wrapIn = wrapIn
 
 // :: (NodeType, ?Object) → (state: EditorState, onAction: ?(action: Action)) → bool
-// Try to the textblock around the selection to the given node type
-// with the given attributes. Return `true` when this is possible. If
-// `apply` is `false`, just report whether the change is possible,
-// don't perform any action.
+// Returns a command that tries to set the textblock around the
+// selection to the given node type with the given attributes.
 function setBlockType(nodeType, attrs) {
   return function(state, onAction) {
     let {$from, $to, node} = state.selection, depth
@@ -477,11 +461,11 @@ function markApplies(doc, from, to, type) {
 // :: (MarkType, ?Object) → (state: EditorState, onAction: ?(action: Action)) → bool
 // Create a command function that toggles the given mark with the
 // given attributes. Will return `false` when the current selection
-// doesn't support that mark. If `apply` is not `false`, it will
-// remove the mark if any marks of that type exist in the selection,
-// or add it otherwise. If the selection is empty, this applies to the
-// [stored marks](#state.EditorState.storedMarks) instead of a
-// range of the document.
+// doesn't support that mark. This will remove the mark if any marks
+// of that type exist in the selection, or add it otherwise. If the
+// selection is empty, this applies to the [stored
+// marks](#state.EditorState.storedMarks) instead of a range of the
+// document.
 function toggleMark(markType, attrs) {
   return function(state, onAction) {
     let {empty, from, to} = state.selection
@@ -503,6 +487,18 @@ function toggleMark(markType, attrs) {
   }
 }
 exports.toggleMark = toggleMark
+
+// :: (...[(EditorState, ?(action: Action)) → bool]) → (EditorState, ?(action: Action)) → bool
+// Combine a number of command functions into a single function (which
+// calls them one by one until one returns true).
+function chainCommands(...commands) {
+  return function(state, onAction) {
+    for (let i = 0; i < commands.length; i++)
+      if (commands[i](state, onAction)) return true
+    return false
+  }
+}
+exports.chainCommands = chainCommands
 
 // :: Object
 // A basic keymap containing bindings not specific to any schema.
