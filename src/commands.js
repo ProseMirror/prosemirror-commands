@@ -261,14 +261,14 @@ function splitBlock(state, onAction) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr.delete($from.pos, $to.pos)
     let deflt = $from.depth == 0 ? null : $from.node(-1).defaultContentType($from.indexAfter(-1))
-    let type = atEnd ? deflt : null
-    let can = canSplit(tr.doc, $from.pos, 1, type)
-    if (!type && !can && canSplit(tr.doc, $from.pos, 1, deflt)) {
-      type = deflt
+    let types = atEnd ? [{type: deflt}] : null
+    let can = canSplit(tr.doc, $from.pos, 1, types)
+    if (!types && !can && canSplit(tr.doc, $from.pos, 1, [{type: deflt}])) {
+      types = [{type: deflt}]
       can = true
     }
     if (can) {
-      tr.split($from.pos, 1, type)
+      tr.split($from.pos, 1, types)
       if (!atEnd && !$from.parentOffset && $from.parent.type != deflt &&
           $from.node(-1).canReplace($from.index(-1), $from.indexAfter(-1), Fragment.from(deflt.create(), $from.parent)))
         tr.setNodeType($from.before(), deflt)
