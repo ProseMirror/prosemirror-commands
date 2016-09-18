@@ -7,7 +7,7 @@ const {selFor} = require("prosemirror-state/test/state")
 const {joinBackward, joinForward, deleteSelection, deleteCharBefore, deleteWordBefore,
        deleteCharAfter, deleteWordAfter, joinUp, joinDown, lift,
        wrapIn, splitBlock, liftEmptyBlock, createParagraphNear, setBlockType,
-       selectParentNode} = require("../src/commands")
+       selectParentNode} = require("../dist/commands")
 
 function apply(doc, command, result) {
   let state = EditorState.create({doc, selection: selFor(doc)})
