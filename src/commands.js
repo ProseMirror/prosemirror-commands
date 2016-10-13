@@ -530,12 +530,12 @@ let baseKeymap = {
 
 if (mac) {
   let extra = {
-    "Ctrl-KeyH": baseKeymap["Backspace"],
+    "Ctrl-h": baseKeymap["Backspace"],
     "Alt-Backspace": baseKeymap["Cmd-Backspace"],
-    "Ctrl-KeyD": baseKeymap["Delete"],
+    "Ctrl-d": baseKeymap["Delete"],
     "Ctrl-Alt-Backspace": baseKeymap["Cmd-Delete"],
     "Alt-Delete": baseKeymap["Cmd-Delete"],
-    "Alt-KeyD": baseKeymap["Cmd-Delete"]
+    "Alt-d": baseKeymap["Cmd-Delete"]
   }
   for (let prop in extra) baseKeymap[prop] = extra[prop]
 }
