@@ -298,7 +298,7 @@ function selectParentNode(state, onAction) {
 exports.selectParentNode = selectParentNode
 
 function deleteBarrier(state, cut, onAction) {
-  let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn
+  let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn, match
   if (canJoin(state.doc, cut)) {
     if (onAction) {
       let tr = state.tr.join(cut)
@@ -308,7 +308,9 @@ function deleteBarrier(state, cut, onAction) {
       onAction(tr.scrollAction())
     }
     return true
-  } else if (after.isTextblock && (conn = before.contentMatchAt(before.childCount).findWrapping(after.type, after.attrs))) {
+  } else if (after.isTextblock && $cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
+             (conn = (match = before.contentMatchAt(before.childCount)).findWrapping(after.type, after.attrs)) &&
+             match.matchType((conn[0] || after).type, (conn[0] || after).attrs).validEnd()) {
     if (onAction) {
       let end = cut + after.nodeSize, wrap = Fragment.empty
       for (let i = conn.length - 1; i >= 0; i--)
