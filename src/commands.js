@@ -308,7 +308,7 @@ function deleteBarrier(state, cut, onAction) {
       onAction(tr.scrollAction())
     }
     return true
-  } else if (after.isTextblock && (conn = before.contentMatchAt($cut.index()).findWrapping(after.type, after.attrs))) {
+  } else if (after.isTextblock && (conn = before.contentMatchAt(before.childCount).findWrapping(after.type, after.attrs))) {
     if (onAction) {
       let end = cut + after.nodeSize, wrap = Fragment.empty
       for (let i = conn.length - 1; i >= 0; i--)
