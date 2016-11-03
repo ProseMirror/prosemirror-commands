@@ -309,7 +309,7 @@ function deleteBarrier(state, cut, onAction) {
     }
     return true
   } else if (after.isTextblock && $cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
-             (conn = (match = before.contentMatchAt(before.childCount)).findWrapping(after.type, after.attrs)) &&
+             (conn = (match = before.contentMatchAt(before.childCount)).findWrappingFor(after)) &&
              match.matchType((conn[0] || after).type, (conn[0] || after).attrs).validEnd()) {
     if (onAction) {
       let end = cut + after.nodeSize, wrap = Fragment.empty
