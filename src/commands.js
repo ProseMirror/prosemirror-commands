@@ -288,7 +288,7 @@ function selectParentNode(state, onAction) {
     if (!sel.$from.depth) return false
     pos = sel.$from.before()
   } else {
-    let same = sel.$head.sameDepth(sel.$anchor)
+    let same = sel.$head.sharedDepth(sel.anchor)
     if (same == 0) return false
     pos = sel.$head.before(same)
   }
