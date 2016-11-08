@@ -10,7 +10,7 @@ const {charCategory} = require("./char")
 // Delete the selection, if there is one.
 function deleteSelection(state, onAction) {
   if (state.selection.empty) return false
-  if (onAction) onAction(state.tr.replaceSelection().scrollAction())
+  if (onAction) onAction(state.tr.deleteSelection().scrollAction())
   return true
 }
 exports.deleteSelection = deleteSelection
@@ -45,7 +45,7 @@ function joinBackward(state, onAction) {
   if (before.isLeaf && isSelectable(before) && $head.parent.content.size == 0) {
     if (onAction) {
       let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
-      tr.setSelection(new NodeSelection(tr.doc.resolve(cut - before.nodeSize)))
+      tr.setSelection(NodeSelection.create(tr.doc, cut - before.nodeSize))
       onAction(tr.scrollAction())
     }
     return true
@@ -160,7 +160,7 @@ function joinUp(state, onAction) {
   }
   if (onAction) {
     let tr = state.tr.join(point)
-    if (state.selection.node) tr.setSelection(new NodeSelection(tr.doc.resolve(point - state.doc.resolve(point).nodeBefore.nodeSize)))
+    if (state.selection.node) tr.setSelection(NodeSelection.create(tr.doc, point - state.doc.resolve(point).nodeBefore.nodeSize))
     onAction(tr.scrollAction())
   }
   return true
@@ -176,7 +176,7 @@ function joinDown(state, onAction) {
   if (!point) return false
   if (onAction) {
     let tr = state.tr.join(point)
-    if (node) tr.setSelection(new NodeSelection(tr.doc.resolve(nodeAt)))
+    if (node) tr.setSelection(NodeSelection.create(tr.doc, nodeAt))
     onAction(tr.scrollAction())
   }
   return true
@@ -219,7 +219,7 @@ function createParagraphNear(state, onAction) {
   if (onAction) {
     let side = ($from.parentOffset ? $to : $from).pos
     let tr = state.tr.insert(side, type.createAndFill())
-    tr.setSelection(new TextSelection(tr.doc.resolve(side + 1)))
+    tr.setSelection(TextSelection.create(tr.doc, side + 1))
     onAction(tr.scrollAction())
   }
   return true
@@ -292,7 +292,7 @@ function selectParentNode(state, onAction) {
     if (same == 0) return false
     pos = sel.$head.before(same)
   }
-  if (onAction) onAction(new NodeSelection(state.doc.resolve(pos)).action())
+  if (onAction) onAction(NodeSelection.create(state.doc, pos).action())
   return true
 }
 exports.selectParentNode = selectParentNode
