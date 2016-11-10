@@ -157,6 +157,10 @@ describe("joinForward", () => {
   it("deletes a leaf node at the end of the document", () =>
      apply(doc(blockquote(p("there<a>")), hr), joinForward,
            doc(blockquote(p("there")))))
+
+  it("selects the block node after when it can't join", () =>
+     apply(doc(p("foo<a>"), ul(li(p("bar"), ul(li(p("baz")))))), joinForward,
+           doc(p("foo<a>"), "<a>", ul(li(p("bar"), ul(li(p("baz"))))))))
 })
 
 describe("deleteCharAfter", () => {

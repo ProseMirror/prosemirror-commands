@@ -58,7 +58,7 @@ function joinBackward(state, onAction) {
   }
 
   // Apply the joining algorithm
-  return deleteBarrier(state, cut, onAction)
+  return deleteBarrier(state, cut, onAction) || selectNextNode(state, cut, -1, onAction)
 }
 exports.joinBackward = joinBackward
 
@@ -91,7 +91,7 @@ function joinForward(state, onAction) {
     return true
   }
   // Apply the joining algorithm
-  return deleteBarrier(state, cut, onAction)
+  return deleteBarrier(state, cut, onAction) || selectNextNode(state, cut, 1, onAction)
 }
 exports.joinForward = joinForward
 
@@ -329,6 +329,15 @@ function deleteBarrier(state, cut, onAction) {
     if (onAction) onAction(state.tr.lift(range, target).scrollAction())
     return true
   }
+}
+
+function selectNextNode(state, cut, dir, onAction) {
+  let $cut = state.doc.resolve(cut)
+  let node = dir > 0 ? $cut.nodeAfter : $cut.nodeBefore
+  if (!node || !NodeSelection.isSelectable(node)) return false
+  if (onAction)
+    onAction(NodeSelection.create(state.doc, cut - (dir > 0 ? 0 : node.nodeSize)).action())
+  return true
 }
 
 // Get an offset moving backward from a current offset inside a node.
