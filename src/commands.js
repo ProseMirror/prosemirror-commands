@@ -1,6 +1,6 @@
 const {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
 const {Slice, Fragment} = require("prosemirror-model")
-const {Selection, TextSelection, NodeSelection, isSelectable} = require("prosemirror-state")
+const {Selection, TextSelection, NodeSelection} = require("prosemirror-state")
 const {isExtendingCharAt} = require("extending-char")
 
 const {ios, mac} = require("./platform")
@@ -42,7 +42,7 @@ function joinBackward(state, onAction) {
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
-  if (before.isLeaf && isSelectable(before) && $head.parent.content.size == 0) {
+  if (before.isLeaf && NodeSelection.isSelectable(before) && $head.parent.content.size == 0) {
     if (onAction) {
       let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
       tr.setSelection(NodeSelection.create(tr.doc, cut - before.nodeSize))
