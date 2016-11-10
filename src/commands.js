@@ -1,6 +1,6 @@
 const {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
 const {Slice, Fragment} = require("prosemirror-model")
-const {Selection, TextSelection, NodeSelection} = require("prosemirror-state")
+const {Selection, TextSelection, NodeSelection, extendTransformAction} = require("prosemirror-state")
 const {isExtendingCharAt} = require("extending-char")
 
 const {ios, mac} = require("./platform")
@@ -489,6 +489,58 @@ function toggleMark(markType, attrs) {
   }
 }
 exports.toggleMark = toggleMark
+
+function wrapOnActionForJoin(onAction, isJoinable) {
+  return action => onAction(extendTransformAction(action, tr => {
+    // Gather the ranges touched by the transform
+    let ranges = []
+    for (let i = 0; i < tr.mapping.maps.length; i++) {
+      let map = tr.mapping.maps[i]
+      for (let j = 0; j < ranges.length; j++)
+        ranges[j] = map.map(ranges[j])
+      map.forEach((_s, _e, from, to) => ranges.push(from, to))
+    }
+
+    // Figure out which joinable points exist inside those ranges,
+    // by checking all node boundaries in their parent nodes.
+    let joinable = []
+    for (let i = 0; i < ranges.length; i += 2) {
+      let from = ranges[i], to = ranges[i + 1]
+      let $from = tr.doc.resolve(from), depth = $from.sharedDepth(to), parent = $from.node(depth)
+      for (let index = $from.indexAfter(depth), pos = $from.after(depth + 1); pos <= to; ++index) {
+        let after = parent.maybeChild(index)
+        if (!after) break
+        if (index && joinable.indexOf(pos) == -1) {
+          let before = parent.child(index - 1)
+          if (before.type == after.type && isJoinable(before, after))
+            joinable.push(pos)
+        }
+        pos += after.nodeSize
+      }
+    }
+    // Join the joinable points
+    joinable.sort((a, b) => a - b)
+    for (let i = joinable.length - 1; i >= 0; i--) {
+      if (canJoin(tr.doc, joinable[i])) tr.join(joinable[i])
+    }
+  }))
+}
+
+// :: ((state: EditorState, ?(action: Action)) → bool, union<(before: Node, after: Node) → bool, [string]>) → (state: EditorState, ?(action: Action)) → bool
+// Wrap a command so that, when it produces a transform that causes
+// two joinable nodes to end up next to each other, those are joined.
+// Nodes are considered joinable when they are of the same type and
+// when the `isJoinable` predicate returns true for them or, if an
+// array of strings was passed, if their node type name is in that
+// array.
+function autoJoin(command, isJoinable) {
+  if (Array.isArray(isJoinable)) {
+    let types = isJoinable
+    isJoinable = node => types.indexOf(node.type.name) > -1
+  }
+  return (state, onAction) => command(state, onAction && wrapOnActionForJoin(onAction, isJoinable))
+}
+exports.autoJoin = autoJoin
 
 // :: (...[(EditorState, ?(action: Action)) → bool]) → (EditorState, ?(action: Action)) → bool
 // Combine a number of command functions into a single function (which

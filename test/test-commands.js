@@ -7,7 +7,7 @@ const {selFor} = require("prosemirror-state/test/state")
 const {joinBackward, joinForward, deleteSelection, deleteCharBefore, deleteWordBefore,
        deleteCharAfter, deleteWordAfter, joinUp, joinDown, lift,
        wrapIn, splitBlock, liftEmptyBlock, createParagraphNear, setBlockType,
-       selectParentNode} = require("../dist/commands")
+       selectParentNode, autoJoin} = require("../dist/commands")
 
 function apply(doc, command, result) {
   let state = EditorState.create({doc, selection: selFor(doc)})
@@ -418,4 +418,31 @@ describe("selectParentNode", () => {
   it("stops at the top level", () =>
      apply(doc("<a>", ul(li(p("foo"), p("bar")), li(p("baz")))), selectParentNode,
            doc("<a>", ul(li(p("foo"), p("bar")), li(p("baz"))))))
+})
+
+describe("autoJoin", () => {
+  it("joins lists when deleting a paragraph between them", () =>
+     apply(doc(ul(li(p("a"))), "<a>", p("b"), ul(li(p("c")))),
+           autoJoin(deleteSelection, ["bullet_list"]),
+           doc(ul(li(p("a")), li(p("c"))))))
+
+  it("doesn't join lists when deleting an item inside of them", () =>
+     apply(doc(ul(li(p("a")), "<a>", li(p("b"))), ul(li(p("c")))),
+           autoJoin(deleteSelection, ["bullet_list"]),
+           doc(ul(li(p("a"))), ul(li(p("c"))))))
+
+  it("joins lists when wrapping a paragraph after them in a list", () =>
+     apply(doc(ul(li(p("a"))), p("b<a>")),
+           autoJoin(wrapIn(schema.nodes.bullet_list), ["bullet_list"]),
+           doc(ul(li(p("a")), li(p("b"))))))
+
+  it("joins lists when wrapping a paragraph between them in a list", () =>
+     apply(doc(ul(li(p("a"))), p("b<a>"), ul(li(p("c")))),
+           autoJoin(wrapIn(schema.nodes.bullet_list), ["bullet_list"]),
+           doc(ul(li(p("a")), li(p("b")), li(p("c"))))))
+
+  it("joins lists when lifting a list between them", () =>
+     apply(doc(ul(li(p("a"))), blockquote("<a>", ul(li(p("b")))), ul(li(p("c")))),
+           autoJoin(lift, ["bullet_list"]),
+           doc(ul(li(p("a")), li(p("b")), li(p("c"))))))
 })
