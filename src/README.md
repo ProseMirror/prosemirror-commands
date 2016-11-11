@@ -27,4 +27,5 @@ These are mostly used to bind keys to, and to define menu items.
 @wrapIn
 @setBlockType
 @toggleMark
+@autoJoin
 @baseKeymap
