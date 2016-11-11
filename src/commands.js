@@ -35,9 +35,16 @@ function joinBackward(state, onAction) {
   // If there is no node before this, try to lift
   if (!before) {
     let range = $head.blockRange(), target = range && liftTarget(range)
-    if (target == null) return false
-    if (onAction) onAction(state.tr.lift(range, target).scrollAction())
-    return true
+    if (target != null) {
+      if (onAction) onAction(state.tr.lift(range, target).scrollAction())
+      return true
+    } else if ($head.depth == 1 && !$head.parent.content.size) {
+      // Else, if the cursor is in an empty textblock, delete it
+      if (onAction) onAction(state.tr.delete($head.before(1), $head.after(1)).scrollAction())
+      return true
+    } else {
+      return false
+    }
   }
 
   // If the node below has no content and the node above is
@@ -82,8 +89,16 @@ function joinForward(state, onAction) {
     }
   }
 
-  // If there is no node after this, there's nothing to do
-  if (!after) return false
+  // There is no node after this
+  if (!after) {
+    // If the cursor is in an empty block, delete that block
+    if ($head.depth == 1 && !$head.parent.content.size) {
+      if (onAction) onAction(state.tr.delete($head.before(1), $head.after(1)).scrollAction())
+      return true
+    } else {
+      return false
+    }
+  }
 
   // If the node doesn't allow children, delete it
   if (after.isLeaf) {
