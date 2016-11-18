@@ -355,7 +355,12 @@ function selectNextNode(state, cut, dir, onAction) {
   return true
 }
 
-// Get an offset moving backward from a current offset inside a node.
+// :: (ResolvedPos, string) → number
+// Get an offset moving backward from a current offset inside a node. If by is "char", it will
+// consider one character back. If it is "word" it will work from the current position backwards
+// through text of a singular character category (e.g. "cat" of "#!*") until reaching a character
+// in a different category (i.e. the beginning of the word).
+// Note that this method is at this point unlikely to work reliably for non-European scripts.
 function moveBackward($pos, by) {
   if (by != "char" && by != "word")
     throw new RangeError("Unknown motion unit: " + by)
@@ -391,7 +396,14 @@ function moveBackward($pos, by) {
     }
   }
 }
+exports.moveBackward = moveBackward
 
+// :: (ResolvedPos, string) → number
+// Get an offset moving forward from a current offset inside a node. If by is "char", it will
+// consider one character forward. If it is "word" it will work from the current position forward
+// through text of a singular character category (e.g. "cat" of "#!*") until reaching a character
+// in a different category (i.e. the end of the word).
+// Note that this method is at this point unlikely to work reliably for non-European scripts.
 function moveForward($pos, by) {
   if (by != "char" && by != "word")
     throw new RangeError("Unknown motion unit: " + by)
@@ -424,6 +436,7 @@ function moveForward($pos, by) {
     }
   }
 }
+exports.moveForward = moveForward
 
 // Parameterized commands
 
