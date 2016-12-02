@@ -200,13 +200,30 @@ exports.lift = lift
 // [`code`](#model.NodeSpec.code) property in its spec, replace the
 // selection with a newline character.
 function newlineInCode(state, onAction) {
-  let {$from, $to, node} = state.selection
-  if (node) return false
-  if (!$from.parent.type.spec.code || $to.pos >= $from.end()) return false
+  let {$head, anchor} = state.selection
+  if (!$head || !$head.parent.type.spec.code || $head.sharedDepth(anchor) != $head.depth) return false
   if (onAction) onAction(state.tr.insertText("\n").scrollAction())
   return true
 }
 exports.newlineInCode = newlineInCode
+
+// :: (EditorState, ?(action: Action)) → bool
+// When the selection is in a node with a truthy
+// [`code`](#model.NodeSpec.code) property in its spec, create a
+// default block after the code block, and move the cursor there.
+function exitCode(state, onAction) {
+  let {$head, anchor} = state.selection
+  if (!$head || !$head.parent.type.spec.code || $head.sharedDepth(anchor) != $head.depth) return false
+  let above = $head.node(-1), after = $head.indexAfter(-1), type = above.defaultContentType(after)
+  if (!above.canReplaceWith(after, after, type)) return false
+  if (onAction) {
+    let pos = $head.after(), tr = state.tr.replaceWith(pos, pos, type.createAndFill())
+    tr.setSelection(Selection.near(tr.doc.resolve(pos), 1))
+    onAction(tr.scrollAction())
+  }
+  return true
+}
+exports.exitCode = exitCode
 
 // :: (EditorState, ?(action: Action)) → bool
 // If a block node is selected, create an empty paragraph before (if
@@ -582,6 +599,7 @@ exports.chainCommands = chainCommands
 // are chained with [`chainCommands`](#commands.chainCommands):
 //
 // * **Enter** to `newlineInCode`, `createParagraphNear`, `liftEmptyBlock`, `splitBlock`
+// * **Mod-Enter** to `exitCode`
 // * **Backspace** to `deleteSelection`, `joinBackward`, `deleteCharBefore`
 // * **Mod-Backspace** to `deleteSelection`, `joinBackward`, `deleteWordBefore`
 // * **Delete** to `deleteSelection`, `joinForward`, `deleteCharAfter`
@@ -592,6 +610,7 @@ exports.chainCommands = chainCommands
 // * **Escape** to `selectParentNode`
 let baseKeymap = {
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
+  "Mod-Enter": exitCode,
 
   "Backspace": ios ? chainCommands(deleteSelection, joinBackward) : chainCommands(deleteSelection, joinBackward, deleteCharBefore),
   "Mod-Backspace": chainCommands(deleteSelection, joinBackward, deleteWordBefore),
