@@ -314,16 +314,26 @@ function selectParentNode(state, onAction) {
 }
 exports.selectParentNode = selectParentNode
 
+function joinMaybeClear(state, $pos, onAction) {
+  console.log("called " + state.doc, $pos.pos)
+  let before = $pos.nodeBefore, after = $pos.nodeAfter, index = $pos.index()
+  if (!before || !after || !before.type.compatibleContent(after.type)) return false
+  if (!before.content.size && $pos.parent.canReplace(index - 1, index)) {
+    if (onAction) onAction(state.tr.delete($pos.pos - before.nodeSize, $pos.pos).scrollAction())
+    return true
+  }
+  if (!$pos.parent.canReplace(index, index + 1)) return false
+  if (onAction)
+    onAction(state.tr
+             .clearNonMatching($pos.pos, before.contentMatchAt(before.childCount))
+             .join($pos.pos)
+             .scrollAction())
+  return true
+}
+
 function deleteBarrier(state, cut, onAction) {
   let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn, match
-  if (canJoin(state.doc, cut)) {
-    if (onAction) {
-      let tr = state.tr.join(cut)
-      if (tr.steps.length && before.content.size == 0 && !before.sameMarkup(after) &&
-          $cut.parent.canReplace($cut.index() - 1, $cut.index()))
-        tr.setNodeType(cut - before.nodeSize, after.type, after.attrs)
-      onAction(tr.scrollAction())
-    }
+  if (joinMaybeClear(state, $cut, onAction)) {
     return true
   } else if (after.isTextblock && $cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
              (conn = (match = before.contentMatchAt(before.childCount)).findWrappingFor(after)) &&
@@ -481,7 +491,7 @@ function setBlockType(nodeType, attrs) {
     if (onAction) {
       let where = $from.before(depth + 1)
       onAction(state.tr
-               .clearMarkupFor(where, nodeType, attrs)
+               .clearNonMatching(where, nodeType.contentExpr.start(attrs))
                .setNodeType(where, nodeType, attrs)
                .scrollAction())
     }

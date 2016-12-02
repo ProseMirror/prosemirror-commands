@@ -1,6 +1,6 @@
 const {Schema} = require("prosemirror-model")
 const {EditorState} = require("prosemirror-state")
-const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, hr} = require("prosemirror-model/test/build")
+const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, hr, img} = require("prosemirror-model/test/build")
 const ist = require("ist")
 const {selFor} = require("prosemirror-state/test/state")
 
@@ -119,6 +119,12 @@ describe("deleteWordBefore", () => {
 describe("joinForward", () => {
   it("joins two textblocks", () =>
      apply(doc(p("foo<a>"), p("bar")), joinForward, doc(p("foobar"))))
+
+  it("keeps type of second node when first is empty", () =>
+     apply(doc(p("x"), p("<a>"), h1("hi")), joinForward, doc(p("x"), h1("<a>hi"))))
+
+  it("clears nodes from joined node that wouldn't be allowed in target node", () =>
+     apply(doc(pre("foo<a>"), p("bar", img)), joinForward, doc(pre("foo<a>bar"))))
 
   it("does nothing at the end of the document", () =>
      apply(doc(p("foo<a>")), joinForward, null))
