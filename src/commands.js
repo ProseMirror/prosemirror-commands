@@ -315,7 +315,6 @@ function selectParentNode(state, onAction) {
 exports.selectParentNode = selectParentNode
 
 function joinMaybeClear(state, $pos, onAction) {
-  console.log("called " + state.doc, $pos.pos)
   let before = $pos.nodeBefore, after = $pos.nodeAfter, index = $pos.index()
   if (!before || !after || !before.type.compatibleContent(after.type)) return false
   if (!before.content.size && $pos.parent.canReplace(index - 1, index)) {
