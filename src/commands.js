@@ -3,7 +3,7 @@ const {Slice, Fragment} = require("prosemirror-model")
 const {Selection, TextSelection, NodeSelection, extendTransformAction} = require("prosemirror-state")
 const {isExtendingCharAt} = require("extending-char")
 
-const {ios, mac} = require("./platform")
+const {mac} = require("./platform")
 const {charCategory} = require("./char")
 
 // :: (EditorState, ?(action: Action)) → bool
@@ -609,10 +609,10 @@ exports.chainCommands = chainCommands
 //
 // * **Enter** to `newlineInCode`, `createParagraphNear`, `liftEmptyBlock`, `splitBlock`
 // * **Mod-Enter** to `exitCode`
-// * **Backspace** to `deleteSelection`, `joinBackward`, `deleteCharBefore`
-// * **Mod-Backspace** to `deleteSelection`, `joinBackward`, `deleteWordBefore`
-// * **Delete** to `deleteSelection`, `joinForward`, `deleteCharAfter`
-// * **Mod-Delete** to `deleteSelection`, `joinForward`, `deleteWordAfter`
+// * **Backspace** to `deleteSelection`, `joinBackward`
+// * **Mod-Backspace** to `deleteSelection`, `joinBackward`
+// * **Delete** to `deleteSelection`, `joinForward`
+// * **Mod-Delete** to `deleteSelection`, `joinForward`
 // * **Alt-ArrowUp** to `joinUp`
 // * **Alt-ArrowDown** to `joinDown`
 // * **Mod-BracketLeft** to `lift`
@@ -621,10 +621,10 @@ let baseKeymap = {
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
   "Mod-Enter": exitCode,
 
-  "Backspace": ios ? chainCommands(deleteSelection, joinBackward) : chainCommands(deleteSelection, joinBackward, deleteCharBefore),
-  "Mod-Backspace": chainCommands(deleteSelection, joinBackward, deleteWordBefore),
-  "Delete": chainCommands(deleteSelection, joinForward, deleteCharAfter),
-  "Mod-Delete": chainCommands(deleteSelection, joinForward, deleteWordAfter),
+  "Backspace": chainCommands(deleteSelection, joinBackward),
+  "Mod-Backspace": chainCommands(deleteSelection, joinBackward),
+  "Delete": chainCommands(deleteSelection, joinForward),
+  "Mod-Delete": chainCommands(deleteSelection, joinForward),
 
   "Alt-ArrowUp": joinUp,
   "Alt-ArrowDown": joinDown,
