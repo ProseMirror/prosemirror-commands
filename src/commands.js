@@ -362,7 +362,7 @@ function selectNextNode(state, cut, dir, onAction) {
   let node = dir > 0 ? $cut.nodeAfter : $cut.nodeBefore
   if (!node || !NodeSelection.isSelectable(node)) return false
   if (onAction)
-    onAction(NodeSelection.create(state.doc, cut - (dir > 0 ? 0 : node.nodeSize)).action())
+    onAction(NodeSelection.create(state.doc, cut - (dir > 0 ? 0 : node.nodeSize)).scrollAction())
   return true
 }
 
