@@ -1,6 +1,6 @@
 {
   "name": "prosemirror-commands",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Editing commands for ProseMirror",
   "main": "dist/commands.js",
   "license": "MIT",
@@ -16,9 +16,9 @@
     "url": "git://github.com/prosemirror/prosemirror-commands.git"
   },
   "dependencies": {
-    "prosemirror-model": "^0.14.0",
-    "prosemirror-transform": "^0.14.0",
-    "prosemirror-state": "^0.14.0"
+    "prosemirror-model": "^0.15.0",
+    "prosemirror-transform": "^0.15.0",
+    "prosemirror-state": "^0.15.0"
   },
   "devDependencies": {
     "buble": "~0.14.0",
