@@ -11,15 +11,18 @@ function deleteSelection(state, onAction) {
 }
 exports.deleteSelection = deleteSelection
 
-// :: (EditorState, ?(action: Action)) → bool
+// :: (EditorState, ?(action: Action), ?EditorView) → bool
 // If the selection is empty and at the start of a textblock, move
 // that block closer to the block before it, by lifting it out of its
 // parent or, if it has no parent it doesn't share with the node
 // before it, moving it into a parent of that node, or joining it with
-// that.
-function joinBackward(state, onAction) {
+// that. Will use the view for accurate start-of-textblock detection
+// if given.
+function joinBackward(state, onAction, view) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset > 0) return false
+  if (!empty || (view ? !view.endOfTextblock("backward", state)
+                      : $head.parentOffset > 0))
+    return false
 
   // Find the node before this one
   let before, cut
@@ -58,15 +61,18 @@ function joinBackward(state, onAction) {
 }
 exports.joinBackward = joinBackward
 
-// :: (EditorState, ?(action: Action)) → bool
+// :: (EditorState, ?(action: Action), ?EditorView) → bool
 // If the selection is empty and the cursor is at the end of a
 // textblock, move the node after it closer to the node with the
 // cursor (lifting it out of parents that aren't shared, moving it
 // into parents of the cursor block, or joining the two when they are
-// siblings).
-function joinForward(state, onAction) {
+// siblings). Will use the view for accurate start-of-textblock
+// detection if given.
+function joinForward(state, onAction, view) {
   let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset < $head.parent.content.size) return false
+  if (!empty || (view ? !view.endOfTextblock("forward", state)
+                      : $head.parentOffset < $head.parent.content.size))
+    return false
 
   // Find the node after this one
   let after, cut
@@ -457,9 +463,9 @@ exports.autoJoin = autoJoin
 // Combine a number of command functions into a single function (which
 // calls them one by one until one returns true).
 function chainCommands(...commands) {
-  return function(state, onAction) {
+  return function(state, onAction, view) {
     for (let i = 0; i < commands.length; i++)
-      if (commands[i](state, onAction)) return true
+      if (commands[i](state, onAction, view)) return true
     return false
   }
 }
