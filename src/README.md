@@ -12,12 +12,6 @@ These are mostly used to bind keys to, and to define menu items.
 @deleteSelection
 @joinBackward
 @joinForward
-@deleteCharBefore
-@deleteWordBefore
-@deleteCharAfter
-@deleteWordAfter
-@moveBackward
-@moveForward
 @joinUp
 @joinDown
 @lift

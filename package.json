@@ -18,8 +18,7 @@
   "dependencies": {
     "prosemirror-model": "^0.14.0",
     "prosemirror-transform": "^0.14.0",
-    "prosemirror-state": "^0.14.0",
-    "extending-char": "^1.0.0"
+    "prosemirror-state": "^0.14.0"
   },
   "devDependencies": {
     "buble": "~0.14.0",

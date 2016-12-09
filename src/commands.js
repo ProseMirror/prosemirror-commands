@@ -1,10 +1,6 @@
 const {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
 const {Slice, Fragment} = require("prosemirror-model")
 const {Selection, TextSelection, NodeSelection, extendTransformAction} = require("prosemirror-state")
-const {isExtendingCharAt} = require("extending-char")
-
-const {mac} = require("./platform")
-const {charCategory} = require("./char")
 
 // :: (EditorState, ?(action: Action)) → bool
 // Delete the selection, if there is one.
@@ -94,56 +90,6 @@ function joinForward(state, onAction) {
   return deleteBarrier(state, cut, onAction) || selectNextNode(state, cut, 1, onAction)
 }
 exports.joinForward = joinForward
-
-// :: (EditorState, ?(action: Action)) → bool
-// Delete the character before the cursor, if the selection is empty
-// and the cursor isn't at the start of a textblock.
-function deleteCharBefore(state, onAction) {
-  let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == 0) return false
-  if (onAction) {
-    let dest = moveBackward($head, "char")
-    onAction(state.tr.delete(dest, $head.pos).scrollAction())
-  }
-  return true
-}
-exports.deleteCharBefore = deleteCharBefore
-
-// :: (EditorState, ?(action: Action)) → bool
-// Delete the word before the cursor, if the selection is empty and
-// the cursor isn't at the start of a textblock.
-function deleteWordBefore(state, onAction) {
-  let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == 0) return false
-  if (onAction)
-    onAction(state.tr.delete(moveBackward($head, "word"), $head.pos).scrollAction())
-  return true
-}
-exports.deleteWordBefore = deleteWordBefore
-
-// :: (EditorState, ?(action: Action)) → bool
-// Delete the character after the cursor, if the selection is empty
-// and the cursor isn't at the end of its textblock.
-function deleteCharAfter(state, onAction) {
-  let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == $head.parent.content.size) return false
-  if (onAction)
-    onAction(state.tr.delete($head.pos, moveForward($head, "char")).scrollAction())
-  return true
-}
-exports.deleteCharAfter = deleteCharAfter
-
-// :: (EditorState, ?(action: Action)) → bool
-// Delete the word after the cursor, if the selection is empty and the
-// cursor isn't at the end of a textblock.
-function deleteWordAfter(state, onAction) {
-  let {$head, empty} = state.selection
-  if (!empty || $head.parentOffset == $head.parent.content.size) return false
-  if (onAction)
-    onAction(state.tr.delete($head.pos, moveForward($head, "word")).scrollAction())
-  return true
-}
-exports.deleteWordAfter = deleteWordAfter
 
 // :: (EditorState, ?(action: Action)) → bool
 // Join the selected block or, if there is a text selection, the
@@ -366,89 +312,6 @@ function selectNextNode(state, cut, dir, onAction) {
   return true
 }
 
-// :: (ResolvedPos, string) → number
-// Get an offset moving backward from a current offset inside a node. If by is "char", it will
-// consider one character back. If it is "word" it will work from the current position backwards
-// through text of a singular character category (e.g. "cat" of "#!*") until reaching a character
-// in a different category (i.e. the beginning of the word).
-// Note that this method is at this point unlikely to work reliably for non-European scripts.
-function moveBackward($pos, by) {
-  if (by != "char" && by != "word")
-    throw new RangeError("Unknown motion unit: " + by)
-
-  let parent = $pos.parent, offset = $pos.parentOffset
-
-  let cat = null, counted = 0, pos = $pos.pos
-  for (;;) {
-    if (offset == 0) return pos
-    let {offset: start, node} = parent.childBefore(offset)
-    if (!node) return pos
-    if (!node.isText) return cat ? pos : pos - 1
-
-    if (by == "char") {
-      for (let i = offset - start; i > 0; i--) {
-        if (!isExtendingCharAt(node.text, i - 1))
-          return pos - 1
-        offset--
-        pos--
-      }
-    } else if (by == "word") {
-      // Work from the current position backwards through text of a singular
-      // character category (e.g. "cat" of "#!*") until reaching a character in a
-      // different category (i.e. the end of the word).
-      for (let i = offset - start; i > 0; i--) {
-        let nextCharCat = charCategory(node.text.charAt(i - 1))
-        if (cat == null || counted == 1 && cat == "space") cat = nextCharCat
-        else if (cat != nextCharCat) return pos
-        offset--
-        pos--
-        counted++
-      }
-    }
-  }
-}
-exports.moveBackward = moveBackward
-
-// :: (ResolvedPos, string) → number
-// Get an offset moving forward from a current offset inside a node. If by is "char", it will
-// consider one character forward. If it is "word" it will work from the current position forward
-// through text of a singular character category (e.g. "cat" of "#!*") until reaching a character
-// in a different category (i.e. the end of the word).
-// Note that this method is at this point unlikely to work reliably for non-European scripts.
-function moveForward($pos, by) {
-  if (by != "char" && by != "word")
-    throw new RangeError("Unknown motion unit: " + by)
-
-  let parent = $pos.parent, offset = $pos.parentOffset, pos = $pos.pos
-
-  let cat = null, counted = 0
-  for (;;) {
-    if (offset == parent.content.size) return pos
-    let {offset: start, node} = parent.childAfter(offset)
-    if (!node) return pos
-    if (!node.isText) return cat ? pos : pos + 1
-
-    if (by == "char") {
-      for (let i = offset - start; i < node.text.length; i++) {
-        if (!isExtendingCharAt(node.text, i + 1))
-          return pos + 1
-        offset++
-        pos++
-      }
-    } else if (by == "word") {
-      for (let i = offset - start; i < node.text.length; i++) {
-        let nextCharCat = charCategory(node.text.charAt(i))
-        if (cat == null || counted == 1 && cat == "space") cat = nextCharCat
-        else if (cat != nextCharCat) return pos
-        offset++
-        pos++
-        counted++
-      }
-    }
-  }
-}
-exports.moveForward = moveForward
-
 // Parameterized commands
 
 function joinPointBelow(state) {
@@ -631,6 +494,10 @@ let baseKeymap = {
   "Mod-BracketLeft": lift,
   "Escape": selectParentNode
 }
+
+// declare global: os, navigator
+const mac = typeof navigator != "undefined" ? /Mac/.test(navigator.platform)
+          : typeof os != "undefined" ? os.platform() == "darwin" : false
 
 if (mac) {
   let extra = {
