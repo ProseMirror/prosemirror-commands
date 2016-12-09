@@ -4,8 +4,7 @@ const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, hr, img} = requi
 const ist = require("ist")
 const {selFor} = require("prosemirror-state/test/state")
 
-const {joinBackward, joinForward, deleteSelection, deleteCharBefore, deleteWordBefore,
-       deleteCharAfter, deleteWordAfter, joinUp, joinDown, lift,
+const {joinBackward, joinForward, deleteSelection, joinUp, joinDown, lift,
        wrapIn, splitBlock, liftEmptyBlock, createParagraphNear, setBlockType,
        selectParentNode, autoJoin} = require("../dist/commands")
 
@@ -84,38 +83,6 @@ describe("deleteSelection", () => {
            doc(p("a<a>"))))
 })
 
-describe("deleteCharBefore", () => {
-  it("deletes the character before", () =>
-     apply(doc(p("ba<a>r")), deleteCharBefore, doc(p("br"))))
-
-  it("deletes combining characters", () =>
-     // The c has two combining characters, which must be deleted along with it
-     apply(doc(p("fç̀<a>o")), deleteCharBefore, doc(p("fo"))))
-
-  it("doesn't touch combining characters before the next real char", () =>
-     apply(doc(p("çç<a>ç")), deleteCharBefore, doc(p("çç"))))
-
-  it("deletes astral characters as a unit", () =>
-     apply(doc(p("😅😆<a>😇😈")), deleteCharBefore, doc(p("😅😇😈"))))
-})
-
-describe("deleteWordBefore", () => {
-  it("deletes a word including a space after it", () =>
-     apply(doc(p("foo bar <a>baz")), deleteWordBefore, doc(p("foo baz"))))
-
-  it("deletes a word directly before the cursor", () =>
-     apply(doc(p("foo bar<a> baz")), deleteWordBefore, doc(p("foo  baz"))))
-
-  it("deletes a group of non-word characters", () =>
-     apply(doc(p("foo ...<a>baz")), deleteWordBefore, doc(p("foo baz"))))
-
-  it("does nothing at the start of a block", () =>
-     apply(doc(p("<a>foo")), deleteWordBefore, null))
-
-  it("deletes a group of space characters", () =>
-     apply(doc(p("foo   <a>bar")), deleteWordBefore, doc(p("foobar"))))
-})
-
 describe("joinForward", () => {
   it("joins two textblocks", () =>
      apply(doc(p("foo<a>"), p("bar")), joinForward, doc(p("foobar"))))
@@ -167,41 +134,6 @@ describe("joinForward", () => {
   it("selects the block node after when it can't join", () =>
      apply(doc(p("foo<a>"), ul(li(p("bar"), ul(li(p("baz")))))), joinForward,
            doc(p("foo<a>"), "<a>", ul(li(p("bar"), ul(li(p("baz"))))))))
-})
-
-describe("deleteCharAfter", () => {
-  it("deletes the character after", () =>
-     apply(doc(p("b<a>ar")), deleteCharAfter, doc(p("br"))))
-
-  it("deletes combining characters after the next char", () =>
-     // The c has two combining characters
-     apply(doc(p("f<a>ç̀o")), deleteCharAfter, doc(p("fo"))))
-
-  it("doesn't touch other nearby combining characters", () =>
-     apply(doc(p("ç<a>çç")), deleteCharAfter, doc(p("çç"))))
-
-  it("deletes an astral plane character as a unit", () =>
-     apply(doc(p("😅😆<a>😇😈")), deleteCharAfter, doc(p("😅😆😈"))))
-})
-
-describe("deleteWordAfter", () => {
-  it("deletes the word after, including a space", () =>
-     apply(doc(p("foo<a> bar baz")), deleteWordAfter, doc(p("foo baz"))))
-
-  it("deletes the word directly after", () =>
-     apply(doc(p("foo <a>bar baz")), deleteWordAfter, doc(p("foo  baz"))))
-
-  it("deletes a group of non-word characters", () =>
-     apply(doc(p("foo<a>... baz")), deleteWordAfter, doc(p("foo baz"))))
-
-  it("does nothing at the end of a block", () =>
-     apply(doc(p("foo<a>")), deleteWordAfter, null))
-
-  it("deletes the rest of a word around the cursor", () =>
-     apply(doc(p("fo<a>o")), deleteWordAfter, doc(p("fo"))))
-
-  it("deletes a group of whitespace characters", () =>
-     apply(doc(p("foo<a>   bar")), deleteWordAfter, doc(p("foobar"))))
 })
 
 describe("joinUp", () => {
