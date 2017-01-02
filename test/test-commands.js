@@ -10,7 +10,7 @@ const {joinBackward, joinForward, deleteSelection, joinUp, joinDown, lift,
 
 function apply(doc, command, result) {
   let state = EditorState.create({doc, selection: selFor(doc)})
-  command(state, action => state = state.applyAction(action))
+  command(state, tr => state = state.apply(tr))
   ist(state.doc, result || doc, eq)
   if (result && result.tag.a != null) ist(state.selection, selFor(result), eq)
 }
