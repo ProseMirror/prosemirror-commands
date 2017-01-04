@@ -6,7 +6,13 @@ const {Selection, TextSelection, NodeSelection} = require("prosemirror-state")
 // Delete the selection, if there is one.
 function deleteSelection(state, dispatch) {
   if (state.selection.empty) return false
-  if (dispatch) dispatch(state.tr.deleteSelection().scrollIntoView())
+  if (dispatch) {
+    let {$from, $to} = state.selection
+    let tr = state.tr.deleteSelection().scrollIntoView()
+    if ($from.sameParent($to) && $from.parent.isTextblock)
+      tr.setStoredMarks(state.doc.marksAt($from.pos, true))
+    dispatch(tr)
+  }
   return true
 }
 exports.deleteSelection = deleteSelection
