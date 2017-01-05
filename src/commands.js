@@ -10,7 +10,7 @@ function deleteSelection(state, dispatch) {
     let {$from, $to} = state.selection
     let tr = state.tr.deleteSelection().scrollIntoView()
     if ($from.sameParent($to) && $from.parent.isTextblock)
-      tr.setStoredMarks(state.doc.marksAt($from.pos, true))
+      tr.setStoredMarks($from.marks(true))
     dispatch(tr)
   }
   return true
@@ -393,11 +393,11 @@ function markApplies(doc, from, to, type) {
 // document.
 function toggleMark(markType, attrs) {
   return function(state, dispatch) {
-    let {empty, from, to} = state.selection
+    let {empty, from, to, $from} = state.selection
     if (!markApplies(state.doc, from, to, markType)) return false
     if (dispatch) {
       if (empty) {
-        if (markType.isInSet(state.storedMarks || state.doc.marksAt(from)))
+        if (markType.isInSet(state.storedMarks || $from.marks()))
           dispatch(state.tr.removeStoredMark(markType))
         else
           dispatch(state.tr.addStoredMark(markType.create(attrs)))
