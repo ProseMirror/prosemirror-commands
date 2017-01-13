@@ -375,7 +375,7 @@ function setBlockType(nodeType, attrs) {
 exports.setBlockType = setBlockType
 
 function markApplies(doc, from, to, type) {
-  let can = false
+  let can = doc.contentMatchAt(0).allowsMark(type)
   doc.nodesBetween(from, to, node => {
     if (can) return false
     can = node.isTextblock && node.contentMatchAt(0).allowsMark(type)
