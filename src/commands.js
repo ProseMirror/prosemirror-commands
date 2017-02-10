@@ -47,7 +47,7 @@ function joinBackward(state, dispatch, view) {
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
-  if (before.isLeaf && NodeSelection.isSelectable(before) && $head.parent.content.size == 0) {
+  if (before.isAtom && NodeSelection.isSelectable(before) && $head.parent.content.size == 0) {
     if (dispatch) {
       let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
       tr.setSelection(NodeSelection.create(tr.doc, cut - before.nodeSize))
