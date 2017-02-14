@@ -257,11 +257,9 @@ describe("splitBlock", () => {
      apply(doc(h1("<a>foo")), splitBlock, doc(p(), h1("foo"))))
 
   const hSchema = new Schema({
-    nodes: schema.nodeSpec.update("heading", {
-      type: schema.nodes.heading.constructor,
+    nodes: schema.spec.nodes.update("heading", {
       content: "inline<_>*"
     }).update("doc", {
-      type: schema.nodes.doc.constructor,
       content: "heading block*"
     })
   })
