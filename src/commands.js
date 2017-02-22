@@ -254,6 +254,18 @@ function splitBlock(state, dispatch) {
 }
 exports.splitBlock = splitBlock
 
+// :: (EditorState, ?(tr: Transaction)) → Bool
+// Acts like [`splitBlock`](#commands.splitBlock), but without
+// resetting the set of active marks at the cursor.
+function splitBlockKeepMarks(state, dispatch) {
+  return splitBlock(state, dispatch && (tr => {
+    let marks = state.storedMarks || (state.selection.$to.parentOffset && state.selection.$from.marks())
+    if (marks) tr.setStoredMarks(marks)
+    dispatch(tr)
+  }))
+}
+exports.splitBlockKeepMarks = splitBlockKeepMarks
+
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Move the selection to the node wrapping the current selection, if
 // any. (Will not select the document node.)

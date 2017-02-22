@@ -1,15 +1,19 @@
 const {Schema} = require("prosemirror-model")
 const {EditorState} = require("prosemirror-state")
-const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, hr, img} = require("prosemirror-model/test/build")
+const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} = require("prosemirror-model/test/build")
 const ist = require("ist")
 const {selFor} = require("prosemirror-state/test/state")
 
 const {joinBackward, joinForward, deleteSelection, joinUp, joinDown, lift,
-       wrapIn, splitBlock, liftEmptyBlock, createParagraphNear, setBlockType,
-       selectParentNode, autoJoin} = require("../dist/commands")
+       wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
+       selectParentNode, autoJoin, toggleMark} = require("../dist/commands")
+
+function mkState(doc) {
+  return EditorState.create({doc, selection: selFor(doc)})
+}
 
 function apply(doc, command, result) {
-  let state = EditorState.create({doc, selection: selFor(doc)})
+  let state = mkState(doc)
   command(state, tr => state = state.apply(tr))
   ist(state.doc, result || doc, eq)
   if (result && result.tag.a != null) ist(state.selection, selFor(result), eq)
@@ -284,6 +288,21 @@ describe("splitBlock", () => {
              hSchema.node("heading", {level: 1}),
              hSchema.node("paragraph", null, hSchema.text("foobar"))
            ])))
+})
+
+describe("splitBlockKeepMarks", () => {
+  it("keeps marks when used after marked text", () => {
+    let state = mkState(doc(p(strong("foo<a>"), "bar")))
+    splitBlockKeepMarks(state, tr => state = state.apply(tr))
+    ist(state.storedMarks.length, 1)
+  })
+
+  it("preserves the stored marks", () => {
+    let state = mkState(doc(p(em("foo<a>"))))
+    toggleMark(schema.marks.strong)(state, tr => state = state.apply(tr))
+    splitBlockKeepMarks(state, tr => state = state.apply(tr))
+    ist(state.storedMarks.length, 2)
+  })
 })
 
 describe("liftEmptyBlock", () => {
