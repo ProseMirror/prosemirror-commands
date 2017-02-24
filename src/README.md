@@ -20,6 +20,7 @@ These are mostly used to bind keys to, and to define menu items.
 @createParagraphNear
 @liftEmptyBlock
 @splitBlock
+@splitBlockKeepMarks
 @selectParentNode
 @wrapIn
 @setBlockType

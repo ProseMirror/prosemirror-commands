@@ -254,7 +254,7 @@ function splitBlock(state, dispatch) {
 }
 exports.splitBlock = splitBlock
 
-// :: (EditorState, ?(tr: Transaction)) → Bool
+// :: (EditorState, ?(tr: Transaction)) → bool
 // Acts like [`splitBlock`](#commands.splitBlock), but without
 // resetting the set of active marks at the cursor.
 function splitBlockKeepMarks(state, dispatch) {
