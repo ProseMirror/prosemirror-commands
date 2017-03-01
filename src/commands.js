@@ -507,7 +507,7 @@ exports.chainCommands = chainCommands
 // * **Mod-BracketLeft** to `lift`
 // * **Escape** to `selectParentNode`
 let baseKeymap = {
-  "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
+  "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlockKeepMarks),
   "Mod-Enter": exitCode,
 
   "Backspace": chainCommands(deleteSelection, joinBackward),
