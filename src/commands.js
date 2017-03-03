@@ -291,7 +291,8 @@ function joinMaybeClear(state, $pos, dispatch) {
     if (dispatch) dispatch(state.tr.delete($pos.pos - before.nodeSize, $pos.pos).scrollIntoView())
     return true
   }
-  if (!$pos.parent.canReplace(index, index + 1)) return false
+  if (!$pos.parent.canReplace(index, index + 1) || !(after.isTextblock || canJoin(state.doc, $pos.pos)))
+    return false
   if (dispatch)
     dispatch(state.tr
              .clearNonMatching($pos.pos, before.contentMatchAt(before.childCount))
