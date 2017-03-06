@@ -9,7 +9,7 @@ function deleteSelection(state, dispatch) {
   if (dispatch) {
     let {$from, $to} = state.selection
     let tr = state.tr.deleteSelection().scrollIntoView()
-    if ($from.sameParent($to) && $from.parent.isTextblock)
+    if ($from.sameParent($to) && $from.parent.inlineContent)
       tr.setStoredMarks($from.marks(true))
     dispatch(tr)
   }
@@ -391,7 +391,7 @@ function markApplies(doc, from, to, type) {
   let can = doc.contentMatchAt(0).allowsMark(type)
   doc.nodesBetween(from, to, node => {
     if (can) return false
-    can = node.isTextblock && node.contentMatchAt(0).allowsMark(type)
+    can = node.inlineContent && node.contentMatchAt(0).allowsMark(type)
   })
   return can
 }
