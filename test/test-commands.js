@@ -61,8 +61,8 @@ describe("joinBackward", () => {
   it("deletes leaf nodes before", () =>
      apply(doc(hr, p("<a>there")), joinBackward, doc(p("there"))))
 
-  it("deletes before it lifts", () =>
-     apply(doc(hr, blockquote(p("<a>there"))), joinBackward, doc(blockquote(p("there")))))
+  it("lifts before it deletes", () =>
+     apply(doc(hr, blockquote(p("<a>there"))), joinBackward, doc(hr, p("there"))))
 
   it("does nothing at start of doc", () =>
      apply(doc(p("<a>foo")), joinBackward, null))
@@ -132,8 +132,12 @@ describe("joinForward", () => {
            null))
 
   it("deletes a leaf node at the end of the document", () =>
+     apply(doc(p("there<a>"), hr), joinForward,
+           doc(p("there"))))
+
+  it("moves before it deletes a leaf node", () =>
      apply(doc(blockquote(p("there<a>")), hr), joinForward,
-           doc(blockquote(p("there")))))
+           doc(blockquote(p("there"), hr))))
 
   it("selects the block node after when it can't join", () =>
      apply(doc(p("foo<a>"), ul(li(p("bar"), ul(li(p("baz")))))), joinForward,

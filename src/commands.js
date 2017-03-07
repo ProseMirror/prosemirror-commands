@@ -31,10 +31,11 @@ function joinBackward(state, dispatch, view) {
     return false
 
   // Find the node before this one
-  let before, cut
+  let before, cut, cutDepth
   for (let i = $head.depth - 1; !before && i >= 0; i--) if ($head.index(i) > 0) {
     cut = $head.before(i + 1)
     before = $head.node(i).child($head.index(i) - 1)
+    cutDepth = i
   }
 
   // If there is no node before this, try to lift
@@ -57,7 +58,7 @@ function joinBackward(state, dispatch, view) {
   }
 
   // If the node doesn't allow children, delete it
-  if (before.isLeaf) {
+  if (before.isLeaf && cutDepth == $head.depth - 1) {
     if (dispatch) dispatch(state.tr.delete(cut - before.nodeSize, cut).scrollIntoView())
     return true
   }
@@ -81,12 +82,13 @@ function joinForward(state, dispatch, view) {
     return false
 
   // Find the node after this one
-  let after, cut
+  let after, cut, cutDepth
   for (let i = $head.depth - 1; !after && i >= 0; i--) {
     let parent = $head.node(i)
     if ($head.index(i) + 1 < parent.childCount) {
       after = parent.child($head.index(i) + 1)
       cut = $head.after(i + 1)
+      cutDepth = i
     }
   }
 
@@ -94,7 +96,7 @@ function joinForward(state, dispatch, view) {
   if (!after) return false
 
   // If the node doesn't allow children, delete it
-  if (after.isLeaf) {
+  if (after.isLeaf && cutDepth == $head.depth - 1) {
     if (dispatch) dispatch(state.tr.delete(cut, cut + after.nodeSize).scrollIntoView())
     return true
   }
@@ -305,7 +307,7 @@ function deleteBarrier(state, cut, dispatch) {
   let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn, match
   if (joinMaybeClear(state, $cut, dispatch)) {
     return true
-  } else if (after.isTextblock && $cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
+  } else if ($cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
              (conn = (match = before.contentMatchAt(before.childCount)).findWrappingFor(after)) &&
              match.matchType((conn[0] || after).type, (conn[0] || after).attrs).validEnd()) {
     if (dispatch) {
