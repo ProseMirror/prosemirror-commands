@@ -6,13 +6,7 @@ const {Selection, TextSelection, NodeSelection} = require("prosemirror-state")
 // Delete the selection, if there is one.
 function deleteSelection(state, dispatch) {
   if (state.selection.empty) return false
-  if (dispatch) {
-    let {$from, $to} = state.selection
-    let tr = state.tr.deleteSelection().scrollIntoView()
-    if ($from.sameParent($to) && $from.parent.inlineContent)
-      tr.setStoredMarks($from.marks(true))
-    dispatch(tr)
-  }
+  if (dispatch) dispatch(state.tr.deleteSelection().scrollIntoView())
   return true
 }
 exports.deleteSelection = deleteSelection
@@ -262,7 +256,7 @@ exports.splitBlock = splitBlock
 function splitBlockKeepMarks(state, dispatch) {
   return splitBlock(state, dispatch && (tr => {
     let marks = state.storedMarks || (state.selection.$to.parentOffset && state.selection.$from.marks())
-    if (marks) tr.setStoredMarks(marks)
+    if (marks) tr.ensureMarks(marks)
     dispatch(tr)
   }))
 }
