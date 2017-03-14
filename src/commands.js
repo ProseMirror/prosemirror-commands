@@ -25,22 +25,22 @@ exports.deleteSelection = deleteSelection
 // that. Will use the view for accurate start-of-textblock detection
 // if given.
 function joinBackward(state, dispatch, view) {
-  let {$head, empty} = state.selection
-  if (!empty || (view ? !view.endOfTextblock("backward", state)
-                      : $head.parentOffset > 0))
+  let {$cursor} = state.selection
+  if (!$cursor || (view ? !view.endOfTextblock("backward", state)
+                        : $cursor.parentOffset > 0))
     return false
 
   // Find the node before this one
   let before, cut, cutDepth
-  for (let i = $head.depth - 1; !before && i >= 0; i--) if ($head.index(i) > 0) {
-    cut = $head.before(i + 1)
-    before = $head.node(i).child($head.index(i) - 1)
+  for (let i = $cursor.depth - 1; !before && i >= 0; i--) if ($cursor.index(i) > 0) {
+    cut = $cursor.before(i + 1)
+    before = $cursor.node(i).child($cursor.index(i) - 1)
     cutDepth = i
   }
 
   // If there is no node before this, try to lift
   if (!before) {
-    let range = $head.blockRange(), target = range && liftTarget(range)
+    let range = $cursor.blockRange(), target = range && liftTarget(range)
     if (target == null) return false
     if (dispatch) dispatch(state.tr.lift(range, target).scrollIntoView())
     return true
@@ -48,9 +48,9 @@ function joinBackward(state, dispatch, view) {
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
-  if (before.isAtom && NodeSelection.isSelectable(before) && $head.parent.content.size == 0) {
+  if (before.isAtom && NodeSelection.isSelectable(before) && $cursor.parent.content.size == 0) {
     if (dispatch) {
-      let tr = state.tr.delete(cut, cut + $head.parent.nodeSize)
+      let tr = state.tr.delete(cut, cut + $cursor.parent.nodeSize)
       tr.setSelection(NodeSelection.create(tr.doc, cut - before.nodeSize))
       dispatch(tr.scrollIntoView())
     }
@@ -58,7 +58,7 @@ function joinBackward(state, dispatch, view) {
   }
 
   // If the node doesn't allow children, delete it
-  if (before.isLeaf && cutDepth == $head.depth - 1) {
+  if (before.isLeaf && cutDepth == $cursor.depth - 1) {
     if (dispatch) dispatch(state.tr.delete(cut - before.nodeSize, cut).scrollIntoView())
     return true
   }
@@ -76,18 +76,18 @@ exports.joinBackward = joinBackward
 // siblings). Will use the view for accurate start-of-textblock
 // detection if given.
 function joinForward(state, dispatch, view) {
-  let {$head, empty} = state.selection
-  if (!empty || (view ? !view.endOfTextblock("forward", state)
-                      : $head.parentOffset < $head.parent.content.size))
+  let {$cursor} = state.selection
+  if (!$cursor || (view ? !view.endOfTextblock("forward", state)
+                        : $cursor.parentOffset < $cursor.parent.content.size))
     return false
 
   // Find the node after this one
   let after, cut, cutDepth
-  for (let i = $head.depth - 1; !after && i >= 0; i--) {
-    let parent = $head.node(i)
-    if ($head.index(i) + 1 < parent.childCount) {
-      after = parent.child($head.index(i) + 1)
-      cut = $head.after(i + 1)
+  for (let i = $cursor.depth - 1; !after && i >= 0; i--) {
+    let parent = $cursor.node(i)
+    if ($cursor.index(i) + 1 < parent.childCount) {
+      after = parent.child($cursor.index(i) + 1)
+      cut = $cursor.after(i + 1)
       cutDepth = i
     }
   }
@@ -96,7 +96,7 @@ function joinForward(state, dispatch, view) {
   if (!after) return false
 
   // If the node doesn't allow children, delete it
-  if (after.isLeaf && cutDepth == $head.depth - 1) {
+  if (after.isLeaf && cutDepth == $cursor.depth - 1) {
     if (dispatch) dispatch(state.tr.delete(cut, cut + after.nodeSize).scrollIntoView())
     return true
   }
@@ -207,16 +207,16 @@ exports.createParagraphNear = createParagraphNear
 // If the cursor is in an empty textblock that can be lifted, lift the
 // block.
 function liftEmptyBlock(state, dispatch) {
-  let {$head, empty} = state.selection
-  if (!empty || $head.parent.content.size) return false
-  if ($head.depth > 1 && $head.after() != $head.end(-1)) {
-    let before = $head.before()
+  let {$cursor} = state.selection
+  if (!$cursor || $cursor.parent.content.size) return false
+  if ($cursor.depth > 1 && $cursor.after() != $cursor.end(-1)) {
+    let before = $cursor.before()
     if (canSplit(state.doc, before)) {
       if (dispatch) dispatch(state.tr.split(before).scrollIntoView())
       return true
     }
   }
-  let range = $head.blockRange(), target = range && liftTarget(range)
+  let range = $cursor.blockRange(), target = range && liftTarget(range)
   if (target == null) return false
   if (dispatch) dispatch(state.tr.lift(range, target).scrollIntoView())
   return true
@@ -272,15 +272,10 @@ exports.splitBlockKeepMarks = splitBlockKeepMarks
 // Move the selection to the node wrapping the current selection, if
 // any. (Will not select the document node.)
 function selectParentNode(state, dispatch) {
-  let sel = state.selection, pos
-  if (sel.node) {
-    if (!sel.$from.depth) return false
-    pos = sel.$from.before()
-  } else {
-    let same = sel.$head.sharedDepth(sel.anchor)
-    if (same == 0) return false
-    pos = sel.$head.before(same)
-  }
+  let {$from, to} = state.selection, pos
+  let same = $from.sharedDepth(to)
+  if (same == 0) return false
+  pos = $from.before(same)
   if (dispatch) dispatch(state.tr.setSelection(NodeSelection.create(state.doc, pos)))
   return true
 }
