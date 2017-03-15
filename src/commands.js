@@ -154,8 +154,8 @@ exports.lift = lift
 // [`code`](#model.NodeSpec.code) property in its spec, replace the
 // selection with a newline character.
 function newlineInCode(state, dispatch) {
-  let {$head, anchor} = state.selection
-  if (!$head || !$head.parent.type.spec.code || $head.sharedDepth(anchor) != $head.depth) return false
+  let {$head, $anchor} = state.selection
+  if (!$head.parent.type.spec.code || !$head.sameParent($anchor)) return false
   if (dispatch) dispatch(state.tr.insertText("\n").scrollIntoView())
   return true
 }
@@ -166,8 +166,8 @@ exports.newlineInCode = newlineInCode
 // [`code`](#model.NodeSpec.code) property in its spec, create a
 // default block after the code block, and move the cursor there.
 function exitCode(state, dispatch) {
-  let {$head, anchor} = state.selection
-  if (!$head || !$head.parent.type.spec.code || $head.sharedDepth(anchor) != $head.depth) return false
+  let {$head, $anchor} = state.selection
+  if (!$head.parent.type.spec.code || !$head.sameParent($anchor)) return false
   let above = $head.node(-1), after = $head.indexAfter(-1), type = above.defaultContentType(after)
   if (!above.canReplaceWith(after, after, type)) return false
   if (dispatch) {
