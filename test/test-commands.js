@@ -1,6 +1,6 @@
 const {Schema} = require("prosemirror-model")
 const {EditorState} = require("prosemirror-state")
-const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} = require("prosemirror-model/test/build")
+const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} = require("prosemirror-test-builder")
 const ist = require("ist")
 const {selFor} = require("prosemirror-state/test/state")
 
