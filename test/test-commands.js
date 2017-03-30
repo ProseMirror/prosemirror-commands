@@ -332,7 +332,10 @@ describe("liftEmptyBlock", () => {
 
 describe("createParagraphNear", () => {
   it("creates a paragraph before a selected node at the start of the doc", () =>
-     apply(doc("<a>", hr), createParagraphNear, doc(p(), hr)))
+     apply(doc("<a>", hr, hr), createParagraphNear, doc(p(), hr, hr)))
+
+  it("creates a paragraph after a lone selected node", () =>
+     apply(doc("<a>", hr), createParagraphNear, doc(hr, p())))
 
   it("creates a paragraph after selected nodes not at the start of the doc", () =>
      apply(doc(p(), "<a>", hr), createParagraphNear, doc(p(), hr, p())))
