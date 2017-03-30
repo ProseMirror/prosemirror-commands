@@ -188,7 +188,7 @@ function createParagraphNear(state, dispatch) {
   let type = $from.parent.defaultContentType($to.indexAfter())
   if (!type || !type.isTextblock) return false
   if (dispatch) {
-    let side = ($from.parentOffset ? $to : $from).pos
+    let side = (!$from.parentOffset && $to.index() < $to.parent.childCount ? $from : $to).pos
     let tr = state.tr.insert(side, type.createAndFill())
     tr.setSelection(TextSelection.create(tr.doc, side + 1))
     dispatch(tr.scrollIntoView())
