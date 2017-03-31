@@ -104,17 +104,17 @@ exports.joinForward = joinForward
 // closest ancestor block of the selection that can be joined, with
 // the sibling above it.
 function joinUp(state, dispatch) {
-  let {node, from} = state.selection, point
-  if (node) {
-    if (node.isTextblock || !canJoin(state.doc, from)) return false
-    point = from
+  let sel = state.selection, nodeSel = sel instanceof NodeSelection, point
+  if (nodeSel) {
+    if (sel.node.isTextblock || !canJoin(state.doc, sel.from)) return false
+    point = sel.from
   } else {
-    point = joinPoint(state.doc, from, -1)
+    point = joinPoint(state.doc, sel.from, -1)
     if (point == null) return false
   }
   if (dispatch) {
     let tr = state.tr.join(point)
-    if (state.selection.node) tr.setSelection(NodeSelection.create(tr.doc, point - state.doc.resolve(point).nodeBefore.nodeSize))
+    if (nodeSel) tr.setSelection(NodeSelection.create(tr.doc, point - state.doc.resolve(point).nodeBefore.nodeSize))
     dispatch(tr.scrollIntoView())
   }
   return true
@@ -125,14 +125,16 @@ exports.joinUp = joinUp
 // Join the selected block, or the closest ancestor of the selection
 // that can be joined, with the sibling after it.
 function joinDown(state, dispatch) {
-  let node = state.selection.node, nodeAt = state.selection.from
-  let point = joinPointBelow(state)
-  if (!point) return false
-  if (dispatch) {
-    let tr = state.tr.join(point)
-    if (node) tr.setSelection(NodeSelection.create(tr.doc, nodeAt))
-    dispatch(tr.scrollIntoView())
+  let sel = state.selection, point
+  if (sel instanceof NodeSelection) {
+    if (sel.node.isTextblock || !canJoin(state.doc, sel.to)) return false
+    point = sel.to
+  } else {
+    point = joinPoint(state.doc, sel.to, 1)
+    if (point == null) return false
   }
+  if (dispatch)
+    dispatch(state.tr.join(point).scrollIntoView())
   return true
 }
 exports.joinDown = joinDown
@@ -183,8 +185,8 @@ exports.exitCode = exitCode
 // If a block node is selected, create an empty paragraph before (if
 // it is its parent's first child) or after it.
 function createParagraphNear(state, dispatch) {
-  let {$from, $to, node} = state.selection
-  if (!node || !node.isBlock) return false
+  let {$from, $to} = state.selection
+  if ($from.parent.inlineContent || $to.parent.inlineContent) return false
   let type = $from.parent.defaultContentType($to.indexAfter())
   if (!type || !type.isTextblock) return false
   if (dispatch) {
@@ -221,8 +223,8 @@ exports.liftEmptyBlock = liftEmptyBlock
 // Split the parent block of the selection. If the selection is a text
 // selection, also delete its content.
 function splitBlock(state, dispatch) {
-  let {$from, $to, node} = state.selection
-  if (node && node.isBlock) {
+  let {$from, $to} = state.selection
+  if (state.selection instanceof NodeSelection && state.selection.node.isBlock) {
     if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return false
     if (dispatch) dispatch(state.tr.split($from.pos).scrollIntoView())
     return true
@@ -230,19 +232,20 @@ function splitBlock(state, dispatch) {
 
   if (dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
-    let tr = state.tr.delete($from.pos, $to.pos)
+    let tr = state.tr
+    if (state.selection instanceof TextSelection) tr.deleteSelection()
     let deflt = $from.depth == 0 ? null : $from.node(-1).defaultContentType($from.indexAfter(-1))
     let types = atEnd ? [{type: deflt}] : null
     let can = canSplit(tr.doc, $from.pos, 1, types)
-    if (!types && !can && canSplit(tr.doc, $from.pos, 1, [{type: deflt}])) {
+    if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, [{type: deflt}])) {
       types = [{type: deflt}]
       can = true
     }
     if (can) {
-      tr.split($from.pos, 1, types)
+      tr.split(tr.mapping.map($from.pos), 1, types)
       if (!atEnd && !$from.parentOffset && $from.parent.type != deflt &&
           $from.node(-1).canReplace($from.index(-1), $from.indexAfter(-1), Fragment.from(deflt.create(), $from.parent)))
-        tr.setNodeType($from.before(), deflt)
+        tr.setNodeType(tr.mapping.map($from.before()), deflt)
     }
     dispatch(tr.scrollIntoView())
   }
@@ -330,12 +333,6 @@ function selectNextNode(state, cut, dir, dispatch) {
 
 // Parameterized commands
 
-function joinPointBelow(state) {
-  let {node, to} = state.selection
-  if (node) return canJoin(state.doc, to) ? to : null
-  else return joinPoint(state.doc, to, 1)
-}
-
 // :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
 // Wrap the selection in a node of the given type with the given
 // attributes.
@@ -355,14 +352,15 @@ exports.wrapIn = wrapIn
 // selection to the given node type with the given attributes.
 function setBlockType(nodeType, attrs) {
   return function(state, dispatch) {
-    let {$from, $to, node} = state.selection, depth
-    if (node) {
+    let {$from, $to} = state.selection, depth, target
+    if (state.selection instanceof NodeSelection) {
       depth = $from.depth
+      target = state.selection.node
     } else {
       if (!$from.depth || $to.pos > $from.end()) return false
       depth = $from.depth - 1
+      target = $from.parent
     }
-    let target = node || $from.parent
     if (!target.isTextblock || target.hasMarkup(nodeType, attrs)) return false
     let index = $from.index(depth)
     if (!$from.node(depth).canReplaceWith(index, index + 1, nodeType)) return false
@@ -378,13 +376,17 @@ function setBlockType(nodeType, attrs) {
 }
 exports.setBlockType = setBlockType
 
-function markApplies(doc, from, to, type) {
-  let can = doc.contentMatchAt(0).allowsMark(type)
-  doc.nodesBetween(from, to, node => {
-    if (can) return false
-    can = node.inlineContent && node.contentMatchAt(0).allowsMark(type)
-  })
-  return can
+function markApplies(doc, ranges, type) {
+  for (let i = 0; i < ranges.length; i++) {
+    let {$from, $to} = ranges[i]
+    let can = $from.depth == 0 ? doc.contentMatchAt(0).allowsMark(type) : false
+    doc.nodesBetween($from.pos, $to.pos, node => {
+      if (can) return false
+      can = node.inlineContent && node.contentMatchAt(0).allowsMark(type)
+    })
+    if (can) return true
+  }
+  return false
 }
 
 // :: (MarkType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
@@ -397,19 +399,26 @@ function markApplies(doc, from, to, type) {
 // document.
 function toggleMark(markType, attrs) {
   return function(state, dispatch) {
-    let {empty, from, to, $from} = state.selection
-    if (!markApplies(state.doc, from, to, markType)) return false
+    let {empty, $cursor, ranges} = state.selection
+    if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType)) return false
     if (dispatch) {
-      if (empty) {
-        if (markType.isInSet(state.storedMarks || $from.marks()))
+      if ($cursor) {
+        if (markType.isInSet(state.storedMarks || $cursor.marks()))
           dispatch(state.tr.removeStoredMark(markType))
         else
           dispatch(state.tr.addStoredMark(markType.create(attrs)))
       } else {
-        if (state.doc.rangeHasMark(from, to, markType))
-          dispatch(state.tr.removeMark(from, to, markType).scrollIntoView())
-        else
-          dispatch(state.tr.addMark(from, to, markType.create(attrs)).scrollIntoView())
+        let has = false, tr = state.tr
+        for (let i = 0; !has && i < ranges.length; i++) {
+          let {$from, $to} = ranges[i]
+          has = state.doc.rangeHasMark($from.pos, $to.pos, markType)
+        }
+        for (let i = 0; i < ranges.length; i++) {
+          let {$from, $to} = ranges[i]
+          if (has) tr.removeMark($from.pos, $to.pos, markType)
+          else tr.addMark($from.pos, $to.pos, markType.create(attrs))
+        }
+        dispatch(tr.scrollIntoView())
       }
     }
     return true
