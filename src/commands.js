@@ -305,11 +305,11 @@ function joinMaybeClear(state, $pos, dispatch) {
 
 function deleteBarrier(state, cut, dispatch) {
   let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn, match
-  if (joinMaybeClear(state, $cut, dispatch)) {
-    return true
-  } else if ($cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
-             (conn = (match = before.contentMatchAt(before.childCount)).findWrappingFor(after)) &&
-             match.matchType((conn[0] || after).type, (conn[0] || after).attrs).validEnd()) {
+  if (joinMaybeClear(state, $cut, dispatch)) return true
+
+  if ($cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
+      (conn = (match = before.contentMatchAt(before.childCount)).findWrappingFor(after))&&
+      match.matchType((conn[0] || after).type, (conn[0] || after).attrs).validEnd()) {
     if (dispatch) {
       let end = cut + after.nodeSize, wrap = Fragment.empty
       for (let i = conn.length - 1; i >= 0; i--)
@@ -321,13 +321,16 @@ function deleteBarrier(state, cut, dispatch) {
       dispatch(tr.scrollIntoView())
     }
     return true
-  } else {
-    let selAfter = Selection.findFrom($cut, 1)
-    let range = selAfter.$from.blockRange(selAfter.$to), target = range && liftTarget(range)
-    if (target == null) return false
+  }
+
+  let selAfter = Selection.findFrom($cut, 1)
+  let range = selAfter && selAfter.$from.blockRange(selAfter.$to), target = range && liftTarget(range)
+  if (target != null && target >= $cut.depth) {
     if (dispatch) dispatch(state.tr.lift(range, target).scrollIntoView())
     return true
   }
+
+  return false
 }
 
 function selectNextNode(state, cut, dir, dispatch) {
