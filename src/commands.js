@@ -1,6 +1,6 @@
 const {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
 const {Slice, Fragment} = require("prosemirror-model")
-const {Selection, TextSelection, NodeSelection} = require("prosemirror-state")
+const {Selection, TextSelection, NodeSelection, AllSelection} = require("prosemirror-state")
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Delete the selection, if there is one.
@@ -278,6 +278,14 @@ function selectParentNode(state, dispatch) {
 }
 exports.selectParentNode = selectParentNode
 
+// :: (EditorState, ?(tr: Transaction)) → bool
+// Select the whole document.
+function selectAll(state, dispatch) {
+  if (dispatch) dispatch(state.tr.setSelection(new AllSelection(state.doc)))
+  return true
+}
+exports.selectAll = selectAll
+
 function joinMaybeClear(state, $pos, dispatch) {
   let before = $pos.nodeBefore, after = $pos.nodeAfter, index = $pos.index()
   if (!before || !after || !before.type.compatibleContent(after.type)) return false
@@ -519,7 +527,8 @@ let baseKeymap = {
   "Alt-ArrowUp": joinUp,
   "Alt-ArrowDown": joinDown,
   "Mod-BracketLeft": lift,
-  "Escape": selectParentNode
+  "Escape": selectParentNode,
+  "Mod-a": selectAll
 }
 
 // declare global: os, navigator
