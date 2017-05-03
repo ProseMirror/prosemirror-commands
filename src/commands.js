@@ -25,11 +25,14 @@ function joinBackward(state, dispatch, view) {
     return false
 
   // Find the node before this one
-  let before, cut, cutDepth
-  for (let i = $cursor.depth - 1; !before && i >= 0; i--) if ($cursor.index(i) > 0) {
-    cut = $cursor.before(i + 1)
-    before = $cursor.node(i).child($cursor.index(i) - 1)
-    cutDepth = i
+  let before, cut, cutDepth, isolated
+  if (!$cursor.parent.type.spec.isolating) for (let i = $cursor.depth - 1; !before && i >= 0; i--) {
+    if ($cursor.index(i) > 0) {
+      cut = $cursor.before(i + 1)
+      before = $cursor.node(i).child($cursor.index(i) - 1)
+      cutDepth = i
+    }
+    if ($cursor.node(i).type.spec.isolating) break
   }
 
   // If there is no node before this, try to lift
@@ -58,7 +61,8 @@ function joinBackward(state, dispatch, view) {
   }
 
   // Apply the joining algorithm
-  return deleteBarrier(state, cut, dispatch) || selectNextNode(state, cut, -1, dispatch)
+  return !before.type.spec.isolating && deleteBarrier(state, cut, dispatch) ||
+    selectNextNode(state, cut, -1, dispatch)
 }
 exports.joinBackward = joinBackward
 
@@ -77,13 +81,14 @@ function joinForward(state, dispatch, view) {
 
   // Find the node after this one
   let after, cut, cutDepth
-  for (let i = $cursor.depth - 1; !after && i >= 0; i--) {
+  if (!$cursor.parent.type.spec.isolating) for (let i = $cursor.depth - 1; !after && i >= 0; i--) {
     let parent = $cursor.node(i)
     if ($cursor.index(i) + 1 < parent.childCount) {
       after = parent.child($cursor.index(i) + 1)
       cut = $cursor.after(i + 1)
       cutDepth = i
     }
+    if (parent.type.spec.isolating) break
   }
 
   // If there is no node after this, there's nothing to do
