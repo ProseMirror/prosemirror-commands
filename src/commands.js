@@ -25,7 +25,7 @@ function joinBackward(state, dispatch, view) {
     return false
 
   // Find the node before this one
-  let before, cut, cutDepth, isolated
+  let before, cut, cutDepth
   if (!$cursor.parent.type.spec.isolating) for (let i = $cursor.depth - 1; !before && i >= 0; i--) {
     if ($cursor.index(i) > 0) {
       cut = $cursor.before(i + 1)
