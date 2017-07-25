@@ -4,7 +4,7 @@ const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img}
 const ist = require("ist")
 const {selFor} = require("prosemirror-state/test/state")
 
-const {joinBackward, joinForward, deleteSelection, joinUp, joinDown, lift,
+const {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
        wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
        selectParentNode, autoJoin, toggleMark} = require("../dist/commands")
 
@@ -16,7 +16,7 @@ function apply(doc, command, result) {
   let state = mkState(doc)
   command(state, tr => state = state.apply(tr))
   ist(state.doc, result || doc, eq)
-  if (result && result.tag.a != null) ist(state.selection, selFor(result), eq)
+  if (result && result.tag.a != null) ist(state.selection,  selFor(result), eq)
 }
 
 describe("joinBackward", () => {
@@ -66,6 +66,15 @@ describe("joinBackward", () => {
 
   it("does nothing at start of doc", () =>
      apply(doc(p("<a>foo")), joinBackward, null))
+})
+
+describe("selectNodeBackward", () => {
+  it("selects the node before the cut", () =>
+     apply(doc(blockquote(p("a")), blockquote(p("<a>b"))), selectNodeBackward,
+           doc("<a>", blockquote(p("a")), blockquote(p("b")))))
+
+  it("does nothing when not at the start of the textblock", () =>
+     apply(doc(p("a<a>b")), selectNodeBackward, null))
 })
 
 describe("deleteSelection", () => {
@@ -139,9 +148,18 @@ describe("joinForward", () => {
      apply(doc(blockquote(p("there<a>")), hr), joinForward,
            doc(blockquote(p("there"), hr))))
 
-  it("selects the block node after when it can't join", () =>
+  it("does nothing when it can't join", () =>
      apply(doc(p("foo<a>"), ul(li(p("bar"), ul(li(p("baz")))))), joinForward,
+           null))
+})
+
+describe("selectNodeForward", () => {
+  it("selects the next node", () =>
+     apply(doc(p("foo<a>"), ul(li(p("bar"), ul(li(p("baz")))))), selectNodeForward,
            doc(p("foo<a>"), "<a>", ul(li(p("bar"), ul(li(p("baz"))))))))
+
+  it("does nothing at end of document", () =>
+     apply(doc(p("foo<a>")), selectNodeForward, null))
 })
 
 describe("joinUp", () => {

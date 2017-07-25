@@ -24,47 +24,67 @@ function joinBackward(state, dispatch, view) {
                         : $cursor.parentOffset > 0))
     return false
 
-  // Find the node before this one
-  let before, cut, cutDepth
-  if (!$cursor.parent.type.spec.isolating) for (let i = $cursor.depth - 1; !before && i >= 0; i--) {
-    if ($cursor.index(i) > 0) {
-      cut = $cursor.before(i + 1)
-      before = $cursor.node(i).child($cursor.index(i) - 1)
-      cutDepth = i
-    }
-    if ($cursor.node(i).type.spec.isolating) break
-  }
+  let $cut = findCutBefore($cursor)
 
   // If there is no node before this, try to lift
-  if (!before) {
+  if (!$cut) {
     let range = $cursor.blockRange(), target = range && liftTarget(range)
     if (target == null) return false
     if (dispatch) dispatch(state.tr.lift(range, target).scrollIntoView())
     return true
   }
 
+  let before = $cut.nodeBefore
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
   if (before.isAtom && NodeSelection.isSelectable(before) && $cursor.parent.content.size == 0) {
     if (dispatch) {
-      let tr = state.tr.delete(cut, cut + $cursor.parent.nodeSize)
-      tr.setSelection(NodeSelection.create(tr.doc, cut - before.nodeSize))
+      let tr = state.tr.delete($cursor.before(), $cursor.after())
+      tr.setSelection(NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
       dispatch(tr.scrollIntoView())
     }
     return true
   }
 
   // If the node doesn't allow children, delete it
-  if (before.isLeaf && cutDepth == $cursor.depth - 1) {
-    if (dispatch) dispatch(state.tr.delete(cut - before.nodeSize, cut).scrollIntoView())
+  if (before.isLeaf && $cut.depth == $cursor.depth - 1) {
+    if (dispatch) dispatch(state.tr.delete($cut.pos - before.nodeSize, $cut.pos).scrollIntoView())
     return true
   }
 
   // Apply the joining algorithm
-  return !before.type.spec.isolating && deleteBarrier(state, cut, dispatch) ||
-    selectNextNode(state, cut, -1, dispatch)
+  return !before.type.spec.isolating && deleteBarrier(state, $cut, dispatch)
 }
 exports.joinBackward = joinBackward
+
+// :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
+// When the selection is empty and at the start of a textblock, select
+// the node before that textblock, if possible. This is intended to be
+// bound to keys like backspace, after
+// [`joinBackward`](##commands.joinBackward) or other deleting
+// commands, as a fall-back behavior when the schema doesn't allow
+// deletion at the selected point.
+function selectNodeBackward(state, dispatch, view) {
+  let {$cursor} = state.selection
+  if (!$cursor || (view ? !view.endOfTextblock("backward", state)
+                        : $cursor.parentOffset > 0))
+    return false
+
+  let $cut = findCutBefore($cursor), node = $cut && $cut.nodeBefore
+  if (!node || !NodeSelection.isSelectable(node)) return false
+  if (dispatch)
+    dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos - node.nodeSize)).scrollIntoView())
+  return true
+}
+exports.selectNodeBackward = selectNodeBackward
+
+function findCutBefore($pos) {
+  if (!$pos.parent.type.spec.isolating) for (let i = $pos.depth - 1; i >= 0; i--) {
+    if ($pos.index(i) > 0) return $pos.doc.resolve($pos.before(i + 1))
+    if ($pos.node(i).type.spec.isolating) break
+  }
+  return null
+}
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
 // If the selection is empty and the cursor is at the end of a
@@ -79,30 +99,51 @@ function joinForward(state, dispatch, view) {
                         : $cursor.parentOffset < $cursor.parent.content.size))
     return false
 
-  // Find the node after this one
-  let after, cut, cutDepth
-  if (!$cursor.parent.type.spec.isolating) for (let i = $cursor.depth - 1; !after && i >= 0; i--) {
-    let parent = $cursor.node(i)
-    if ($cursor.index(i) + 1 < parent.childCount) {
-      after = parent.child($cursor.index(i) + 1)
-      cut = $cursor.after(i + 1)
-      cutDepth = i
-    }
-    if (parent.type.spec.isolating) break
-  }
+  let $cut = findCutAfter($cursor)
 
   // If there is no node after this, there's nothing to do
-  if (!after) return false
+  if (!$cut) return false
 
+  let after = $cut.nodeAfter
   // If the node doesn't allow children, delete it
-  if (after.isLeaf && cutDepth == $cursor.depth - 1) {
-    if (dispatch) dispatch(state.tr.delete(cut, cut + after.nodeSize).scrollIntoView())
+  if (after.isLeaf && $cut.depth == $cursor.depth - 1) {
+    if (dispatch) dispatch(state.tr.delete($cut.pos, $cut.pos + after.nodeSize).scrollIntoView())
     return true
   }
   // Apply the joining algorithm
-  return deleteBarrier(state, cut, dispatch) || selectNextNode(state, cut, 1, dispatch)
+  return deleteBarrier(state, $cut, dispatch)
 }
 exports.joinForward = joinForward
+
+// :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
+// When the selection is empty and at the end of a textblock, select
+// the node coming after that textblock, if possible. This is intended
+// to be bound to keys like delete, after
+// [`joinForward`](##commands.joinForward) and similar deleting
+// commands, to provide a fall-back behavior when the schema doesn't
+// allow deletion at the selected point.
+function selectNodeForward(state, dispatch, view) {
+  let {$cursor} = state.selection
+  if (!$cursor || (view ? !view.endOfTextblock("forward", state)
+                        : $cursor.parentOffset < $cursor.parent.content.size))
+    return false
+
+  let $cut = findCutAfter($cursor), node = $cut && $cut.nodeAfter
+  if (!node || !NodeSelection.isSelectable(node)) return false
+  if (dispatch)
+    dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos)).scrollIntoView())
+  return true
+}
+exports.selectNodeForward = selectNodeForward
+
+function findCutAfter($pos) {
+  if (!$pos.parent.type.spec.isolating) for (let i = $pos.depth - 1; i >= 0; i--) {
+    let parent = $pos.node(i)
+    if ($pos.index(i) + 1 < parent.childCount) return $pos.doc.resolve($pos.after(i + 1))
+    if (parent.type.spec.isolating) break
+  }
+  return null
+}
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Join the selected block or, if there is a text selection, the
@@ -308,19 +349,19 @@ function joinMaybeClear(state, $pos, dispatch) {
   return true
 }
 
-function deleteBarrier(state, cut, dispatch) {
-  let $cut = state.doc.resolve(cut), before = $cut.nodeBefore, after = $cut.nodeAfter, conn, match
+function deleteBarrier(state, $cut, dispatch) {
+  let before = $cut.nodeBefore, after = $cut.nodeAfter, conn, match
   if (joinMaybeClear(state, $cut, dispatch)) return true
 
   if ($cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
       (conn = (match = before.contentMatchAt(before.childCount)).findWrappingFor(after))&&
       match.matchType((conn[0] || after).type, (conn[0] || after).attrs).validEnd()) {
     if (dispatch) {
-      let end = cut + after.nodeSize, wrap = Fragment.empty
+      let end = $cut.pos + after.nodeSize, wrap = Fragment.empty
       for (let i = conn.length - 1; i >= 0; i--)
         wrap = Fragment.from(conn[i].type.create(conn[i].attrs, wrap))
       wrap = Fragment.from(before.copy(wrap))
-      let tr = state.tr.step(new ReplaceAroundStep(cut - 1, end, cut, end, new Slice(wrap, 1, 0), conn.length, true))
+      let tr = state.tr.step(new ReplaceAroundStep($cut.pos - 1, end, $cut.pos, end, new Slice(wrap, 1, 0), conn.length, true))
       let joinAt = end + 2 * conn.length
       if (canJoin(tr.doc, joinAt)) tr.join(joinAt)
       dispatch(tr.scrollIntoView())
@@ -336,15 +377,6 @@ function deleteBarrier(state, cut, dispatch) {
   }
 
   return false
-}
-
-function selectNextNode(state, cut, dir, dispatch) {
-  let $cut = state.doc.resolve(cut)
-  let node = dir > 0 ? $cut.nodeAfter : $cut.nodeBefore
-  if (!node || !NodeSelection.isSelectable(node)) return false
-  if (dispatch)
-    dispatch(state.tr.setSelection(NodeSelection.create(state.doc, cut - (dir > 0 ? 0 : node.nodeSize))).scrollIntoView())
-  return true
 }
 
 // Parameterized commands
@@ -508,6 +540,9 @@ function chainCommands(...commands) {
 }
 exports.chainCommands = chainCommands
 
+let backspace = chainCommands(deleteSelection, joinBackward, selectNodeBackward)
+let del = chainCommands(deleteSelection, joinForward, selectNodeForward)
+
 // :: Object
 // A basic keymap containing bindings not specific to any schema.
 // Binds the following keys (when multiple commands are listed, they
@@ -515,10 +550,10 @@ exports.chainCommands = chainCommands
 //
 // * **Enter** to `newlineInCode`, `createParagraphNear`, `liftEmptyBlock`, `splitBlock`
 // * **Mod-Enter** to `exitCode`
-// * **Backspace** to `deleteSelection`, `joinBackward`
-// * **Mod-Backspace** to `deleteSelection`, `joinBackward`
-// * **Delete** to `deleteSelection`, `joinForward`
-// * **Mod-Delete** to `deleteSelection`, `joinForward`
+// * **Backspace** to `deleteSelection`, `joinBackward`, `selectNodeBackward`
+// * **Mod-Backspace** to `deleteSelection`, `joinBackward`, `selectNodeBackward`
+// * **Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
+// * **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
 // * **Alt-ArrowUp** to `joinUp`
 // * **Alt-ArrowDown** to `joinDown`
 // * **Mod-BracketLeft** to `lift`
@@ -527,10 +562,10 @@ let baseKeymap = {
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
   "Mod-Enter": exitCode,
 
-  "Backspace": chainCommands(deleteSelection, joinBackward),
-  "Mod-Backspace": chainCommands(deleteSelection, joinBackward),
-  "Delete": chainCommands(deleteSelection, joinForward),
-  "Mod-Delete": chainCommands(deleteSelection, joinForward),
+  "Backspace": backspace,
+  "Mod-Backspace": backspace,
+  "Delete": del,
+  "Mod-Delete": del,
 
   "Alt-ArrowUp": joinUp,
   "Alt-ArrowDown": joinDown,
