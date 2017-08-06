@@ -1,15 +1,14 @@
-const {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} = require("prosemirror-transform")
-const {Slice, Fragment} = require("prosemirror-model")
-const {Selection, TextSelection, NodeSelection, AllSelection} = require("prosemirror-state")
+import {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} from "prosemirror-transform"
+import {Slice, Fragment} from "prosemirror-model"
+import {Selection, TextSelection, NodeSelection, AllSelection} from "prosemirror-state"
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Delete the selection, if there is one.
-function deleteSelection(state, dispatch) {
+export function deleteSelection(state, dispatch) {
   if (state.selection.empty) return false
   if (dispatch) dispatch(state.tr.deleteSelection().scrollIntoView())
   return true
 }
-exports.deleteSelection = deleteSelection
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
 // If the selection is empty and at the start of a textblock, move
@@ -18,7 +17,7 @@ exports.deleteSelection = deleteSelection
 // before it, moving it into a parent of that node, or joining it with
 // that. Will use the view for accurate start-of-textblock detection
 // if given.
-function joinBackward(state, dispatch, view) {
+export function joinBackward(state, dispatch, view) {
   let {$cursor} = state.selection
   if (!$cursor || (view ? !view.endOfTextblock("backward", state)
                         : $cursor.parentOffset > 0))
@@ -55,7 +54,6 @@ function joinBackward(state, dispatch, view) {
   // Apply the joining algorithm
   return !before.type.spec.isolating && deleteBarrier(state, $cut, dispatch)
 }
-exports.joinBackward = joinBackward
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
 // When the selection is empty and at the start of a textblock, select
@@ -64,7 +62,7 @@ exports.joinBackward = joinBackward
 // [`joinBackward`](##commands.joinBackward) or other deleting
 // commands, as a fall-back behavior when the schema doesn't allow
 // deletion at the selected point.
-function selectNodeBackward(state, dispatch, view) {
+export function selectNodeBackward(state, dispatch, view) {
   let {$cursor} = state.selection
   if (!$cursor || (view ? !view.endOfTextblock("backward", state)
                         : $cursor.parentOffset > 0))
@@ -76,7 +74,6 @@ function selectNodeBackward(state, dispatch, view) {
     dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos - node.nodeSize)).scrollIntoView())
   return true
 }
-exports.selectNodeBackward = selectNodeBackward
 
 function findCutBefore($pos) {
   if (!$pos.parent.type.spec.isolating) for (let i = $pos.depth - 1; i >= 0; i--) {
@@ -93,7 +90,7 @@ function findCutBefore($pos) {
 // into parents of the cursor block, or joining the two when they are
 // siblings). Will use the view for accurate start-of-textblock
 // detection if given.
-function joinForward(state, dispatch, view) {
+export function joinForward(state, dispatch, view) {
   let {$cursor} = state.selection
   if (!$cursor || (view ? !view.endOfTextblock("forward", state)
                         : $cursor.parentOffset < $cursor.parent.content.size))
@@ -113,7 +110,6 @@ function joinForward(state, dispatch, view) {
   // Apply the joining algorithm
   return deleteBarrier(state, $cut, dispatch)
 }
-exports.joinForward = joinForward
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
 // When the selection is empty and at the end of a textblock, select
@@ -122,7 +118,7 @@ exports.joinForward = joinForward
 // [`joinForward`](##commands.joinForward) and similar deleting
 // commands, to provide a fall-back behavior when the schema doesn't
 // allow deletion at the selected point.
-function selectNodeForward(state, dispatch, view) {
+export function selectNodeForward(state, dispatch, view) {
   let {$cursor} = state.selection
   if (!$cursor || (view ? !view.endOfTextblock("forward", state)
                         : $cursor.parentOffset < $cursor.parent.content.size))
@@ -134,7 +130,6 @@ function selectNodeForward(state, dispatch, view) {
     dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos)).scrollIntoView())
   return true
 }
-exports.selectNodeForward = selectNodeForward
 
 function findCutAfter($pos) {
   if (!$pos.parent.type.spec.isolating) for (let i = $pos.depth - 1; i >= 0; i--) {
@@ -149,7 +144,7 @@ function findCutAfter($pos) {
 // Join the selected block or, if there is a text selection, the
 // closest ancestor block of the selection that can be joined, with
 // the sibling above it.
-function joinUp(state, dispatch) {
+export function joinUp(state, dispatch) {
   let sel = state.selection, nodeSel = sel instanceof NodeSelection, point
   if (nodeSel) {
     if (sel.node.isTextblock || !canJoin(state.doc, sel.from)) return false
@@ -165,12 +160,11 @@ function joinUp(state, dispatch) {
   }
   return true
 }
-exports.joinUp = joinUp
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Join the selected block, or the closest ancestor of the selection
 // that can be joined, with the sibling after it.
-function joinDown(state, dispatch) {
+export function joinDown(state, dispatch) {
   let sel = state.selection, point
   if (sel instanceof NodeSelection) {
     if (sel.node.isTextblock || !canJoin(state.doc, sel.to)) return false
@@ -183,37 +177,34 @@ function joinDown(state, dispatch) {
     dispatch(state.tr.join(point).scrollIntoView())
   return true
 }
-exports.joinDown = joinDown
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Lift the selected block, or the closest ancestor block of the
 // selection that can be lifted, out of its parent node.
-function lift(state, dispatch) {
+export function lift(state, dispatch) {
   let {$from, $to} = state.selection
   let range = $from.blockRange($to), target = range && liftTarget(range)
   if (target == null) return false
   if (dispatch) dispatch(state.tr.lift(range, target).scrollIntoView())
   return true
 }
-exports.lift = lift
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // If the selection is in a node whose type has a truthy
 // [`code`](#model.NodeSpec.code) property in its spec, replace the
 // selection with a newline character.
-function newlineInCode(state, dispatch) {
+export function newlineInCode(state, dispatch) {
   let {$head, $anchor} = state.selection
   if (!$head.parent.type.spec.code || !$head.sameParent($anchor)) return false
   if (dispatch) dispatch(state.tr.insertText("\n").scrollIntoView())
   return true
 }
-exports.newlineInCode = newlineInCode
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // When the selection is in a node with a truthy
 // [`code`](#model.NodeSpec.code) property in its spec, create a
 // default block after the code block, and move the cursor there.
-function exitCode(state, dispatch) {
+export function exitCode(state, dispatch) {
   let {$head, $anchor} = state.selection
   if (!$head.parent.type.spec.code || !$head.sameParent($anchor)) return false
   let above = $head.node(-1), after = $head.indexAfter(-1), type = above.defaultContentType(after)
@@ -225,12 +216,11 @@ function exitCode(state, dispatch) {
   }
   return true
 }
-exports.exitCode = exitCode
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // If a block node is selected, create an empty paragraph before (if
 // it is its parent's first child) or after it.
-function createParagraphNear(state, dispatch) {
+export function createParagraphNear(state, dispatch) {
   let {$from, $to} = state.selection
   if ($from.parent.inlineContent || $to.parent.inlineContent) return false
   let type = $from.parent.defaultContentType($to.indexAfter())
@@ -243,12 +233,11 @@ function createParagraphNear(state, dispatch) {
   }
   return true
 }
-exports.createParagraphNear = createParagraphNear
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // If the cursor is in an empty textblock that can be lifted, lift the
 // block.
-function liftEmptyBlock(state, dispatch) {
+export function liftEmptyBlock(state, dispatch) {
   let {$cursor} = state.selection
   if (!$cursor || $cursor.parent.content.size) return false
   if ($cursor.depth > 1 && $cursor.after() != $cursor.end(-1)) {
@@ -263,12 +252,11 @@ function liftEmptyBlock(state, dispatch) {
   if (dispatch) dispatch(state.tr.lift(range, target).scrollIntoView())
   return true
 }
-exports.liftEmptyBlock = liftEmptyBlock
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Split the parent block of the selection. If the selection is a text
 // selection, also delete its content.
-function splitBlock(state, dispatch) {
+export function splitBlock(state, dispatch) {
   let {$from, $to} = state.selection
   if (state.selection instanceof NodeSelection && state.selection.node.isBlock) {
     if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return false
@@ -297,24 +285,22 @@ function splitBlock(state, dispatch) {
   }
   return true
 }
-exports.splitBlock = splitBlock
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Acts like [`splitBlock`](#commands.splitBlock), but without
 // resetting the set of active marks at the cursor.
-function splitBlockKeepMarks(state, dispatch) {
+export function splitBlockKeepMarks(state, dispatch) {
   return splitBlock(state, dispatch && (tr => {
     let marks = state.storedMarks || (state.selection.$to.parentOffset && state.selection.$from.marks())
     if (marks) tr.ensureMarks(marks)
     dispatch(tr)
   }))
 }
-exports.splitBlockKeepMarks = splitBlockKeepMarks
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Move the selection to the node wrapping the current selection, if
 // any. (Will not select the document node.)
-function selectParentNode(state, dispatch) {
+export function selectParentNode(state, dispatch) {
   let {$from, to} = state.selection, pos
   let same = $from.sharedDepth(to)
   if (same == 0) return false
@@ -322,15 +308,13 @@ function selectParentNode(state, dispatch) {
   if (dispatch) dispatch(state.tr.setSelection(NodeSelection.create(state.doc, pos)))
   return true
 }
-exports.selectParentNode = selectParentNode
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Select the whole document.
-function selectAll(state, dispatch) {
+export function selectAll(state, dispatch) {
   if (dispatch) dispatch(state.tr.setSelection(new AllSelection(state.doc)))
   return true
 }
-exports.selectAll = selectAll
 
 function joinMaybeClear(state, $pos, dispatch) {
   let before = $pos.nodeBefore, after = $pos.nodeAfter, index = $pos.index()
@@ -384,7 +368,7 @@ function deleteBarrier(state, $cut, dispatch) {
 // :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
 // Wrap the selection in a node of the given type with the given
 // attributes.
-function wrapIn(nodeType, attrs) {
+export function wrapIn(nodeType, attrs) {
   return function(state, dispatch) {
     let {$from, $to} = state.selection
     let range = $from.blockRange($to), wrapping = range && findWrapping(range, nodeType, attrs)
@@ -393,12 +377,11 @@ function wrapIn(nodeType, attrs) {
     return true
   }
 }
-exports.wrapIn = wrapIn
 
 // :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
 // Returns a command that tries to set the textblock around the
 // selection to the given node type with the given attributes.
-function setBlockType(nodeType, attrs) {
+export function setBlockType(nodeType, attrs) {
   return function(state, dispatch) {
     let {$from, $to} = state.selection, depth, target
     if (state.selection instanceof NodeSelection) {
@@ -422,7 +405,6 @@ function setBlockType(nodeType, attrs) {
     return true
   }
 }
-exports.setBlockType = setBlockType
 
 function markApplies(doc, ranges, type) {
   for (let i = 0; i < ranges.length; i++) {
@@ -445,7 +427,7 @@ function markApplies(doc, ranges, type) {
 // selection is empty, this applies to the [stored
 // marks](#state.EditorState.storedMarks) instead of a range of the
 // document.
-function toggleMark(markType, attrs) {
+export function toggleMark(markType, attrs) {
   return function(state, dispatch) {
     let {empty, $cursor, ranges} = state.selection
     if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType)) return false
@@ -472,7 +454,6 @@ function toggleMark(markType, attrs) {
     return true
   }
 }
-exports.toggleMark = toggleMark
 
 function wrapDispatchForJoin(dispatch, isJoinable) {
   return tr => {
@@ -519,26 +500,24 @@ function wrapDispatchForJoin(dispatch, isJoinable) {
 // when the `isJoinable` predicate returns true for them or, if an
 // array of strings was passed, if their node type name is in that
 // array.
-function autoJoin(command, isJoinable) {
+export function autoJoin(command, isJoinable) {
   if (Array.isArray(isJoinable)) {
     let types = isJoinable
     isJoinable = node => types.indexOf(node.type.name) > -1
   }
   return (state, dispatch) => command(state, dispatch && wrapDispatchForJoin(dispatch, isJoinable))
 }
-exports.autoJoin = autoJoin
 
 // :: (...[(EditorState, ?(tr: Transaction)) → bool]) → (EditorState, ?(tr: Transaction)) → bool
 // Combine a number of command functions into a single function (which
 // calls them one by one until one returns true).
-function chainCommands(...commands) {
+export function chainCommands(...commands) {
   return function(state, dispatch, view) {
     for (let i = 0; i < commands.length; i++)
       if (commands[i](state, dispatch, view)) return true
     return false
   }
 }
-exports.chainCommands = chainCommands
 
 let backspace = chainCommands(deleteSelection, joinBackward, selectNodeBackward)
 let del = chainCommands(deleteSelection, joinForward, selectNodeForward)
@@ -558,7 +537,7 @@ let del = chainCommands(deleteSelection, joinForward, selectNodeForward)
 // * **Alt-ArrowDown** to `joinDown`
 // * **Mod-BracketLeft** to `lift`
 // * **Escape** to `selectParentNode`
-let baseKeymap = {
+export let baseKeymap = {
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
   "Mod-Enter": exitCode,
 
@@ -590,4 +569,3 @@ if (mac) {
   for (let prop in extra) baseKeymap[prop] = extra[prop]
 }
 
-exports.baseKeymap = baseKeymap
