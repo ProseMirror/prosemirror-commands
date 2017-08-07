@@ -508,7 +508,7 @@ export function autoJoin(command, isJoinable) {
   return (state, dispatch) => command(state, dispatch && wrapDispatchForJoin(dispatch, isJoinable))
 }
 
-// :: (...[(EditorState, ?(tr: Transaction)) → bool]) → (EditorState, ?(tr: Transaction)) → bool
+// :: (...[(EditorState, ?(tr: Transaction), ?EditorView) → bool]) → (EditorState, ?(tr: Transaction), ?EditorView) → bool
 // Combine a number of command functions into a single function (which
 // calls them one by one until one returns true).
 export function chainCommands(...commands) {
