@@ -568,4 +568,3 @@ if (mac) {
   }
   for (let prop in extra) baseKeymap[prop] = extra[prop]
 }
-

@@ -11,7 +11,9 @@ These are mostly used to bind keys to, and to define menu items.
 @chainCommands
 @deleteSelection
 @joinBackward
+@selectNodeBackward
 @joinForward
+@selectNodeForward
 @joinUp
 @joinDown
 @lift
