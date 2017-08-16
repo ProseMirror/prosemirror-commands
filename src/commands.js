@@ -34,9 +34,13 @@ export function joinBackward(state, dispatch, view) {
   }
 
   let before = $cut.nodeBefore
+  // Apply the joining algorithm
+  if (!before.type.spec.isolating && deleteBarrier(state, $cut, dispatch))
+    return true
+
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
-  if (before.isAtom && NodeSelection.isSelectable(before) && $cursor.parent.content.size == 0) {
+  if ($cursor.parent.content.size == 0 && NodeSelection.isSelectable(before)) {
     if (dispatch) {
       let tr = state.tr.delete($cursor.before(), $cursor.after())
       tr.setSelection(NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
@@ -45,14 +49,13 @@ export function joinBackward(state, dispatch, view) {
     return true
   }
 
-  // If the node doesn't allow children, delete it
-  if (before.isLeaf && $cut.depth == $cursor.depth - 1) {
+  // If the node before is an atom, delete it
+  if (before.isAtom && $cut.depth == $cursor.depth - 1) {
     if (dispatch) dispatch(state.tr.delete($cut.pos - before.nodeSize, $cut.pos).scrollIntoView())
     return true
   }
 
-  // Apply the joining algorithm
-  return !before.type.spec.isolating && deleteBarrier(state, $cut, dispatch)
+  return false
 }
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
@@ -102,13 +105,27 @@ export function joinForward(state, dispatch, view) {
   if (!$cut) return false
 
   let after = $cut.nodeAfter
-  // If the node doesn't allow children, delete it
-  if (after.isLeaf && $cut.depth == $cursor.depth - 1) {
+  // Try the joining algorithm
+  if (deleteBarrier(state, $cut, dispatch)) return true
+
+  // If the node above has no content and the node below is
+  // selectable, delete the node above and select the one below.
+  if ($cursor.parent.content.size == 0 && NodeSelection.isSelectable(after)) {
+    if (dispatch) {
+      let tr = state.tr.delete($cursor.before(), $cursor.after())
+      tr.setSelection(NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)))
+      dispatch(tr.scrollIntoView())
+    }
+    return true
+  }
+
+  // If the next node is an atom, delete it
+  if (after.isAtom && $cut.depth == $cursor.depth - 1) {
     if (dispatch) dispatch(state.tr.delete($cut.pos, $cut.pos + after.nodeSize).scrollIntoView())
     return true
   }
-  // Apply the joining algorithm
-  return deleteBarrier(state, $cut, dispatch)
+
+  return false
 }
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
