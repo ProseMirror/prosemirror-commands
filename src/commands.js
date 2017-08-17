@@ -344,7 +344,7 @@ function joinMaybeClear(state, $pos, dispatch) {
     return false
   if (dispatch)
     dispatch(state.tr
-             .clearNonMatching($pos.pos, before.contentMatchAt(before.childCount))
+             .clearNonMatching($pos.pos, before.type, before.contentMatchAt(before.childCount))
              .join($pos.pos)
              .scrollIntoView())
   return true
@@ -355,12 +355,12 @@ function deleteBarrier(state, $cut, dispatch) {
   if (joinMaybeClear(state, $cut, dispatch)) return true
 
   if ($cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
-      (conn = (match = before.contentMatchAt(before.childCount)).findWrappingFor(after))&&
-      match.matchType((conn[0] || after).type, (conn[0] || after).attrs).validEnd()) {
+      (conn = (match = before.contentMatchAt(before.childCount)).findWrapping(after.type)) &&
+      match.matchType(conn[0] || after.type).validEnd) {
     if (dispatch) {
       let end = $cut.pos + after.nodeSize, wrap = Fragment.empty
       for (let i = conn.length - 1; i >= 0; i--)
-        wrap = Fragment.from(conn[i].type.create(conn[i].attrs, wrap))
+        wrap = Fragment.from(conn[i].create(null, wrap))
       wrap = Fragment.from(before.copy(wrap))
       let tr = state.tr.step(new ReplaceAroundStep($cut.pos - 1, end, $cut.pos, end, new Slice(wrap, 1, 0), conn.length, true))
       let joinAt = end + 2 * conn.length
@@ -415,7 +415,7 @@ export function setBlockType(nodeType, attrs) {
     if (dispatch) {
       let where = $from.before(depth + 1)
       dispatch(state.tr
-               .clearNonMatching(where, nodeType.contentExpr.start(attrs))
+               .clearNonMatching(where, nodeType)
                .setNodeType(where, nodeType, attrs)
                .scrollIntoView())
     }
@@ -426,10 +426,10 @@ export function setBlockType(nodeType, attrs) {
 function markApplies(doc, ranges, type) {
   for (let i = 0; i < ranges.length; i++) {
     let {$from, $to} = ranges[i]
-    let can = $from.depth == 0 ? doc.contentMatchAt(0).allowsMark(type) : false
+    let can = $from.depth == 0 ? doc.type.allowsMarkType(type) : false
     doc.nodesBetween($from.pos, $to.pos, node => {
       if (can) return false
-      can = node.inlineContent && node.contentMatchAt(0).allowsMark(type)
+      can = node.inlineContent && node.type.allowsMarkType(type)
     })
     if (can) return true
   }

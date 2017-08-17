@@ -284,7 +284,7 @@ describe("splitBlock", () => {
 
   const hSchema = new Schema({
     nodes: schema.spec.nodes.update("heading", {
-      content: "inline<_>*"
+      content: "inline*"
     }).update("doc", {
       content: "heading block*"
     })
