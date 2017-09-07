@@ -1,8 +1,7 @@
 module.exports = {
-  entry: "./src/commands.js",
-  dest: "dist/commands.js",
-  format: "cjs",
-  sourceMap: true,
+  input: "./src/commands.js",
+  output: {format: "cjs", file: "dist/commands.js"},
+  sourcemap: true,
   plugins: [require("rollup-plugin-buble")()],
   external(id) { return !/^[\.\/]/.test(id) }
 }
