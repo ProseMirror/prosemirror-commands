@@ -15,8 +15,8 @@ export function deleteSelection(state, dispatch) {
 // that block closer to the block before it, by lifting it out of its
 // parent or, if it has no parent it doesn't share with the node
 // before it, moving it into a parent of that node, or joining it with
-// that. Will use the view for accurate start-of-textblock detection
-// if given.
+// that. Will use the view for accurate (bidi-aware)
+// start-of-textblock detection if given.
 export function joinBackward(state, dispatch, view) {
   let {$cursor} = state.selection
   if (!$cursor || (view ? !view.endOfTextblock("backward", state)
@@ -62,7 +62,7 @@ export function joinBackward(state, dispatch, view) {
 // When the selection is empty and at the start of a textblock, select
 // the node before that textblock, if possible. This is intended to be
 // bound to keys like backspace, after
-// [`joinBackward`](##commands.joinBackward) or other deleting
+// [`joinBackward`](#commands.joinBackward) or other deleting
 // commands, as a fall-back behavior when the schema doesn't allow
 // deletion at the selected point.
 export function selectNodeBackward(state, dispatch, view) {
@@ -132,7 +132,7 @@ export function joinForward(state, dispatch, view) {
 // When the selection is empty and at the end of a textblock, select
 // the node coming after that textblock, if possible. This is intended
 // to be bound to keys like delete, after
-// [`joinForward`](##commands.joinForward) and similar deleting
+// [`joinForward`](#commands.joinForward) and similar deleting
 // commands, to provide a fall-back behavior when the schema doesn't
 // allow deletion at the selected point.
 export function selectNodeForward(state, dispatch, view) {
@@ -542,13 +542,12 @@ let del = chainCommands(deleteSelection, joinForward, selectNodeForward)
 // :: Object
 // A basic keymap containing bindings not specific to any schema.
 // Binds the following keys (when multiple commands are listed, they
-// are chained with [`chainCommands`](#commands.chainCommands):
+// are chained with [`chainCommands`](#commands.chainCommands)):
 //
 // * **Enter** to `newlineInCode`, `createParagraphNear`, `liftEmptyBlock`, `splitBlock`
 // * **Mod-Enter** to `exitCode`
-// * **Backspace** to `deleteSelection`, `joinBackward`, `selectNodeBackward`
-// * **Mod-Backspace** to `deleteSelection`, `joinBackward`, `selectNodeBackward`
-// * **Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
+// * **Backspace** and **Mod-Backspace** to `deleteSelection`, `joinBackward`, `selectNodeBackward`
+// * **Delete** and **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
 // * **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
 // * **Alt-ArrowUp** to `joinUp`
 // * **Alt-ArrowDown** to `joinDown`

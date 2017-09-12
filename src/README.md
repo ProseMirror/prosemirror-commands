@@ -1,12 +1,12 @@
-This module exports a number of ‘commands‘, which are building block
+This module exports a number of _commands_, which are building block
 functions that encapsulate an editing action. A command function takes
-an editor state and _optionally_ an `onAction` function that it can
-use to take an action. It should return a boolean that indicates
-whether it could perform any action. When no `onAction` callback is
+an editor state and _optionally_ a `dispatch` function that it can use
+to dispatch a transaction. It should return a boolean that indicates
+whether it could perform any action. When no `dispatch` callback is
 passed, the command should do a 'dry run', determining whether it is
 applicable, but not actually doing anything.
 
-These are mostly used to bind keys to, and to define menu items.
+These are mostly used to bind keys and define menu items.
 
 @chainCommands
 @deleteSelection
