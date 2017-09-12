@@ -549,23 +549,14 @@ let del = chainCommands(deleteSelection, joinForward, selectNodeForward)
 // * **Backspace** and **Mod-Backspace** to `deleteSelection`, `joinBackward`, `selectNodeBackward`
 // * **Delete** and **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
 // * **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
-// * **Alt-ArrowUp** to `joinUp`
-// * **Alt-ArrowDown** to `joinDown`
-// * **Mod-BracketLeft** to `lift`
-// * **Escape** to `selectParentNode`
+// * **Mod-a** to `selectAll`
 export let baseKeymap = {
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
   "Mod-Enter": exitCode,
-
   "Backspace": backspace,
   "Mod-Backspace": backspace,
   "Delete": del,
   "Mod-Delete": del,
-
-  "Alt-ArrowUp": joinUp,
-  "Alt-ArrowDown": joinDown,
-  "Mod-BracketLeft": lift,
-  "Escape": selectParentNode,
   "Mod-a": selectAll
 }
 
