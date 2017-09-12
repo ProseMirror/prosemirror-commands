@@ -344,7 +344,7 @@ function joinMaybeClear(state, $pos, dispatch) {
     return false
   if (dispatch)
     dispatch(state.tr
-             .clearNonMatching($pos.pos, before.type, before.contentMatchAt(before.childCount))
+             .clearIncompatible($pos.pos, before.type, before.contentMatchAt(before.childCount))
              .join($pos.pos)
              .scrollIntoView())
   return true
@@ -415,7 +415,7 @@ export function setBlockType(nodeType, attrs) {
     if (dispatch) {
       let where = $from.before(depth + 1)
       dispatch(state.tr
-               .clearNonMatching(where, nodeType)
+               .clearIncompatible(where, nodeType)
                .setNodeType(where, nodeType, attrs)
                .scrollIntoView())
     }
