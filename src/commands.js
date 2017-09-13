@@ -41,10 +41,12 @@ export function joinBackward(state, dispatch, view) {
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
-  if ($cursor.parent.content.size == 0 && NodeSelection.isSelectable(before)) {
+  if ($cursor.parent.content.size == 0 &&
+      (textblockAt(before, "end") || NodeSelection.isSelectable(before))) {
     if (dispatch) {
-      let tr = state.tr.delete($cursor.before(), $cursor.after())
-      tr.setSelection(NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
+      let tr = state.tr.deleteRange($cursor.before(), $cursor.after())
+      tr.setSelection(textblockAt(before, "end") ? Selection.findFrom($cut, -1)
+                      : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
       dispatch(tr.scrollIntoView())
     }
     return true
@@ -56,6 +58,12 @@ export function joinBackward(state, dispatch, view) {
     return true
   }
 
+  return false
+}
+
+function textblockAt(node, side) {
+  for (; node; node = (side == "start" ? node.firstChild : node.lastChild))
+    if (node.isTextblock) return true
   return false
 }
 
@@ -110,10 +118,12 @@ export function joinForward(state, dispatch, view) {
 
   // If the node above has no content and the node below is
   // selectable, delete the node above and select the one below.
-  if ($cursor.parent.content.size == 0 && NodeSelection.isSelectable(after)) {
+  if ($cursor.parent.content.size == 0 &&
+      (textblockAt(after, "start") || NodeSelection.isSelectable(after))) {
     if (dispatch) {
-      let tr = state.tr.delete($cursor.before(), $cursor.after())
-      tr.setSelection(NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)))
+      let tr = state.tr.deleteRange($cursor.before(), $cursor.after())
+      tr.setSelection(textblockAt(after, "start") ? Selection.findFrom($cut, 1)
+                      : NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)))
       dispatch(tr.scrollIntoView())
     }
     return true
