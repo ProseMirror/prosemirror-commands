@@ -11,12 +11,13 @@ export function deleteSelection(state, dispatch) {
 }
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
-// If the selection is empty and at the start of a textblock, move
-// that block closer to the block before it, by lifting it out of its
-// parent or, if it has no parent it doesn't share with the node
-// before it, moving it into a parent of that node, or joining it with
-// that. Will use the view for accurate (bidi-aware)
-// start-of-textblock detection if given.
+// If the selection is empty and at the start of a textblock, try to
+// reduce the distance between that block and the one before it—if
+// there's a block directly before it that can be joined, join them.
+// If not, try to move the selected block closer to the next one in
+// the document structure by lifting it out of its parent or moving it
+// into a parent of the previous block. Will use the view for accurate
+// (bidi-aware) start-of-textblock detection if given.
 export function joinBackward(state, dispatch, view) {
   let {$cursor} = state.selection
   if (!$cursor || (view ? !view.endOfTextblock("backward", state)
@@ -88,11 +89,10 @@ function findCutBefore($pos) {
 
 // :: (EditorState, ?(tr: Transaction), ?EditorView) → bool
 // If the selection is empty and the cursor is at the end of a
-// textblock, move the node after it closer to the node with the
-// cursor (lifting it out of parents that aren't shared, moving it
-// into parents of the cursor block, or joining the two when they are
-// siblings). Will use the view for accurate start-of-textblock
-// detection if given.
+// textblock, try to reduce or remove the boundary between that block
+// and the one after it, either by joining them or by moving the other
+// block closer to this one in the tree structure. Will use the view
+// for accurate start-of-textblock detection if given.
 export function joinForward(state, dispatch, view) {
   let {$cursor} = state.selection
   if (!$cursor || (view ? !view.endOfTextblock("forward", state)
