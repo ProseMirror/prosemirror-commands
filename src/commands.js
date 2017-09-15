@@ -306,7 +306,7 @@ export function splitBlock(state, dispatch) {
       tr.split(tr.mapping.map($from.pos), 1, types)
       if (!atEnd && !$from.parentOffset && $from.parent.type != deflt &&
           $from.node(-1).canReplace($from.index(-1), $from.indexAfter(-1), Fragment.from(deflt.create(), $from.parent)))
-        tr.setNodeType(tr.mapping.map($from.before()), deflt)
+        tr.setNodeMarkup(tr.mapping.map($from.before()), deflt)
     }
     dispatch(tr.scrollIntoView())
   }
@@ -426,7 +426,7 @@ export function setBlockType(nodeType, attrs) {
       let where = $from.before(depth + 1)
       dispatch(state.tr
                .clearIncompatible(where, nodeType)
-               .setNodeType(where, nodeType, attrs)
+               .setNodeMarkup(where, nodeType, attrs)
                .scrollIntoView())
     }
     return true
