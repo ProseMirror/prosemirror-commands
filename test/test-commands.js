@@ -384,6 +384,16 @@ describe("setBlockType", () => {
 
   it("clears marks when necessary", () =>
      apply(doc(p("fo<a>o", em("bar"))), setCode, doc(pre("foobar"))))
+
+  it("acts on multiple blocks when possible", () =>
+     apply(doc(p("a<a>bc"), p("def"), ul(li(p("ghi"), p("jk<b>l")))), setCode,
+           doc(pre("a<a>bc"), pre("def"), ul(li(p("ghi"), pre("jk<b>l"))))))
+
+  it("returns false when the first textblock in the selection is already this type", () =>
+     apply(doc(pre("a<a>bc"), p("de<b>f")), setCode, null))
+
+  it("returns false when the first textblock in the selection can't be changed", () =>
+     apply(doc(ul(p("a<a>bc"), p("de<b>f"))), setCode, null))
 })
 
 describe("selectParentNode", () => {

@@ -410,25 +410,19 @@ export function wrapIn(nodeType, attrs) {
 // selection to the given node type with the given attributes.
 export function setBlockType(nodeType, attrs) {
   return function(state, dispatch) {
-    let {$from, $to} = state.selection, depth, target
-    if (state.selection instanceof NodeSelection) {
-      depth = $from.depth
-      target = state.selection.node
-    } else {
-      if (!$from.depth || $to.pos > $from.end()) return false
-      depth = $from.depth - 1
-      target = $from.parent
-    }
-    if (!target.isTextblock || target.hasMarkup(nodeType, attrs)) return false
-    let index = $from.index(depth)
-    if (!$from.node(depth).canReplaceWith(index, index + 1, nodeType)) return false
-    if (dispatch) {
-      let where = $from.before(depth + 1)
-      dispatch(state.tr
-               .clearIncompatible(where, nodeType)
-               .setNodeMarkup(where, nodeType, attrs)
-               .scrollIntoView())
-    }
+    let {from, to} = state.selection
+    let firstTextblock = null, firstPos = -1
+    state.doc.nodesBetween(from, to, (node, pos) => {
+      if (firstTextblock) return false
+      if (node.isTextblock) {
+        firstTextblock = node
+        firstPos = pos
+      }
+    })
+    if (!firstTextblock || firstTextblock.hasMarkup(nodeType, attrs)) return false
+    let $firstPos = state.doc.resolve(firstPos), index = $firstPos.index()
+    if (!$firstPos.parent.canReplaceWith(index, index + 1, nodeType)) return false
+    if (dispatch) dispatch(state.tr.setBlockType(from, to, nodeType, attrs).scrollIntoView())
     return true
   }
 }
