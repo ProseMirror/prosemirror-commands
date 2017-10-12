@@ -1,12 +1,21 @@
 const {Schema} = require("prosemirror-model")
-const {EditorState} = require("prosemirror-state")
+const {EditorState, Selection, TextSelection, NodeSelection} = require("prosemirror-state")
 const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} = require("prosemirror-test-builder")
 const ist = require("ist")
-const {selFor} = require("prosemirror-state/test/state")
 
 const {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
        wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
        selectParentNode, autoJoin, toggleMark} = require("../dist/commands")
+
+function selFor(doc) {
+  let a = doc.tag.a
+  if (a != null) {
+    let $a = doc.resolve(a)
+    if ($a.parent.inlineContent) return new TextSelection($a, doc.tag.b != null ? doc.resolve(doc.tag.b) : undefined)
+    else return new NodeSelection($a)
+  }
+  return Selection.atStart(doc)
+}
 
 function mkState(doc) {
   return EditorState.create({doc, selection: selFor(doc)})
