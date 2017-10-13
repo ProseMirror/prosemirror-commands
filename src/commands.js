@@ -587,4 +587,4 @@ const mac = typeof navigator != "undefined" ? /Mac/.test(navigator.platform)
 // Depending on the detected platform, this will hold
 // [`pcBasekeymap`](#commands.pcBaseKeymap) or
 // [`macBaseKeymap`](#commands.macBaseKeymap).
-export let baseKeymap = mac ? macBaseKeymap : baseKeymap
+export let baseKeymap = mac ? macBaseKeymap : pcBaseKeymap
