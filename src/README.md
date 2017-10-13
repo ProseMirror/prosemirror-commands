@@ -30,3 +30,5 @@ These are mostly used to bind keys and define menu items.
 @toggleMark
 @autoJoin
 @baseKeymap
+@pcBaseKeymap
+@macBaseKeymap

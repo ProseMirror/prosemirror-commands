@@ -554,7 +554,7 @@ let del = chainCommands(deleteSelection, joinForward, selectNodeForward)
 // * **Delete** and **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
 // * **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
 // * **Mod-a** to `selectAll`
-export let baseKeymap = {
+export let pcBaseKeymap = {
   "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
   "Mod-Enter": exitCode,
   "Backspace": backspace,
@@ -564,18 +564,27 @@ export let baseKeymap = {
   "Mod-a": selectAll
 }
 
+// :: Object
+// A copy of `pcBaseKeymap` that also binds **Ctrl-h** like Backspace,
+// **Ctrl-d** like Delete, **Alt-Backspace** like Ctrl-Backspace, and
+// **Ctrl-Alt-Backspace**, **Alt-Delete**, and **Alt-d** like
+// Ctrl-Delete.
+export let macBaseKeymap = {
+  "Ctrl-h": pcBaseKeymap["Backspace"],
+  "Alt-Backspace": pcBaseKeymap["Mod-Backspace"],
+  "Ctrl-d": pcBaseKeymap["Delete"],
+  "Ctrl-Alt-Backspace": pcBaseKeymap["Mod-Delete"],
+  "Alt-Delete": pcBaseKeymap["Mod-Delete"],
+  "Alt-d": pcBaseKeymap["Mod-Delete"]
+}
+for (let key in pcBaseKeymap) macBaseKeymap[key] = pcBaseKeymap[key]
+
 // declare global: os, navigator
 const mac = typeof navigator != "undefined" ? /Mac/.test(navigator.platform)
           : typeof os != "undefined" ? os.platform() == "darwin" : false
 
-if (mac) {
-  let extra = {
-    "Ctrl-h": baseKeymap["Backspace"],
-    "Alt-Backspace": baseKeymap["Mod-Backspace"],
-    "Ctrl-d": baseKeymap["Delete"],
-    "Ctrl-Alt-Backspace": baseKeymap["Mod-Delete"],
-    "Alt-Delete": baseKeymap["Mod-Delete"],
-    "Alt-d": baseKeymap["Mod-Delete"]
-  }
-  for (let prop in extra) baseKeymap[prop] = extra[prop]
-}
+// :: Object
+// Depending on the detected platform, this will hold
+// [`pcBasekeymap`](#commands.pcBaseKeymap) or
+// [`macBaseKeymap`](#commands.macBaseKeymap).
+export let baseKeymap = mac ? macBaseKeymap : baseKeymap
