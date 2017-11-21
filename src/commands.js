@@ -298,7 +298,7 @@ export function splitBlock(state, dispatch) {
     let deflt = $from.depth == 0 ? null : $from.node(-1).defaultContentType($from.indexAfter(-1))
     let types = atEnd ? [{type: deflt}] : null
     let can = canSplit(tr.doc, $from.pos, 1, types)
-    if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, [{type: deflt}])) {
+    if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, deflt && [{type: deflt}])) {
       types = [{type: deflt}]
       can = true
     }
