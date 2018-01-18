@@ -362,6 +362,7 @@ function joinMaybeClear(state, $pos, dispatch) {
 
 function deleteBarrier(state, $cut, dispatch) {
   let before = $cut.nodeBefore, after = $cut.nodeAfter, conn, match
+  if (before.type.spec.isolating || after.type.spec.isolating) return false
   if (joinMaybeClear(state, $cut, dispatch)) return true
 
   if ($cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
