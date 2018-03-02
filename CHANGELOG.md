@@ -1,0 +1,112 @@
+## 1.0.5 (2018-01-30)
+
+### Bug fixes
+
+Fix crash in [`splitBlock`](http://prosemirror.net/docs/ref/#commands.splitBlock) when `defaultContentType` returns null.
+
+## 1.0.4 (2018-01-18)
+
+### Bug fixes
+
+Pressing delete in front of an [isolating](http://prosemirror.net/docs/ref/#model.NodeSpec.isolating) node no longer opens it.
+
+## 1.0.3 (2017-12-19)
+
+### Bug fixes
+
+Fix issue where [`joinBackward`](http://prosemirror.net/docs/ref/#commands.joinBackward) would sometimes create an invalid selection.
+
+## 1.0.2 (2017-11-21)
+
+### Bug fixes
+
+[`splitBlock`](http://prosemirror.net/docs/ref/#commands.splitBlock) no longer crashes when used in a block that's it's parent node's only allowed child.
+
+## 1.0.0 (2017-10-13)
+
+### New features
+
+The [`setBlockType` command](http://prosemirror.net/docs/ref/#commands.setBlockType) can now be used to change the types of multiple selected textblocks (rather than only one).
+
+The platform-dependent versions of the [base keymap](http://prosemirror.net/docs/ref/#commands.baseKeymap) are now exported separately as [`pcBaseKeymap`](http://prosemirror.net/docs/ref/#commands.pcBaseKeymap) and [`macBaseKeymap`](http://prosemirror.net/docs/ref/#commands.macBaseKeymap).
+
+## 0.23.0 (2017-09-13)
+
+### Breaking changes
+
+`joinForward` and `joinBackward` no longer fall back to selecting the next node when no other behavior is possible. There are now separate commands `selectNodeForward` and `selectNodeBackward` that do this, which the base keymap binds as fallback behavior.
+
+[`baseKeymap`](http://prosemirror.net/docs/ref/version/0.23.0.html#commands.baseKeymap) no longer binds keys for `joinUp`, `joinDown`, `lift`, and `selectParentNode`.
+
+### New features
+
+New commands [`selectNodeForward`](http://prosemirror.net/docs/ref/version/0.23.0.html#commands.selectNodeForward) and [`selectNodeBackward`](http://prosemirror.net/docs/ref/version/0.23.0.html#commands.selectNodeBackward) added.
+
+## 0.20.0 (2017-04-03)
+
+### New features
+
+The new [`selectAll` command](http://prosemirror.net/docs/ref/version/0.20.0.html#commands.selectAll), bound to Mod-a in the base keymap, sets the selection to an [`AllSelection`](http://prosemirror.net/docs/ref/version/0.20.0.html#state.AllSelection).
+
+## 0.19.0 (2017-03-16)
+
+### Bug fixes
+
+Calling `joinBackward` at the start of a node that can't be joined no longer raises an error.
+
+## 0.18.0 (2017-02-24)
+
+### New features
+
+New command [`splitBlockKeepMarks`](http://prosemirror.net/docs/ref/version/0.18.0.html#commands.splitBlockKeepMarks) which splits a block but preserves the marks at the cursor.
+
+## 0.17.1 (2017-01-16)
+
+### Bug fixes
+
+Make sure [`toggleMark`](http://prosemirror.net/docs/ref/version/0.17.0.html#commands.toggleMark) also works in the top-level node (when it is a textblock).
+
+## 0.17.0 (2017-01-05)
+
+### Breaking changes
+
+The `dispatch` function passed to commands is now passed a [`Transaction`](http://prosemirror.net/docs/ref/version/0.17.0.html#state.Transaction), not an action object.
+
+## 0.15.0 (2016-12-10)
+
+### Breaking changes
+
+Drops suppport for `delete(Char|Word)(Before|After)` and `move(Back|For)ward`, since we are now letting the browser handle those natively.
+
+### Bug fixes
+
+The [`joinForward`](http://prosemirror.net/docs/ref/version/0.15.0.html#commands.joinForward) and [`joinBackward`](http://prosemirror.net/docs/ref/version/0.15.0.html#commands.joinBackward) commands can now strip out markup and nodes that aren't allowed in the joined node.
+
+### New features
+
+A new command [`exitCode`](http://prosemirror.net/docs/ref/version/0.15.0.html#commands.exitCode) allows a user to exit a code block by creating a new paragraph below it.
+
+The [`joinForward`](http://prosemirror.net/docs/ref/version/0.15.0.html#commands.joinForward) and [`joinBackward`](http://prosemirror.net/docs/ref/version/0.15.0.html#commands.joinBackward) commands now use a bidirectional-text-aware way to determine whether the cursor is at the proper side of its parent textblock when they are passed a view.
+
+## 0.13.0 (2016-11-11)
+
+### New features
+
+The [`autoJoin`](http://prosemirror.net/docs/ref/version/0.13.0.html#commands.autoJoin) function allows you to wrap command functions so that when the command makes nodes of a certain type occur next to each other, they are automatically joined.
+
+## 0.12.0 (2016-10-21)
+
+### Bug fixes
+
+Fix crash when backspacing into nodes with complex content
+expressions.
+
+## 0.11.0 (2016-09-21)
+
+### Breaking changes
+
+Moved into a separate module.
+
+The interface for command functions was changed to work with the new
+[state](http://prosemirror.net/docs/ref/version/0.11.0.html#state.EditorState)/[action](http://prosemirror.net/docs/ref/version/0.11.0.html#state.Action) abstractions.
+
