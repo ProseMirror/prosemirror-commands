@@ -234,7 +234,7 @@ export function newlineInCode(state, dispatch) {
 export function exitCode(state, dispatch) {
   let {$head, $anchor} = state.selection
   if (!$head.parent.type.spec.code || !$head.sameParent($anchor)) return false
-  let above = $head.node(-1), after = $head.indexAfter(-1), type = above.defaultContentType(after)
+  let above = $head.node(-1), after = $head.indexAfter(-1), type = above.contentMatchAt(after).defaultType
   if (!above.canReplaceWith(after, after, type)) return false
   if (dispatch) {
     let pos = $head.after(), tr = state.tr.replaceWith(pos, pos, type.createAndFill())
@@ -250,7 +250,7 @@ export function exitCode(state, dispatch) {
 export function createParagraphNear(state, dispatch) {
   let {$from, $to} = state.selection
   if ($from.parent.inlineContent || $to.parent.inlineContent) return false
-  let type = $from.parent.defaultContentType($to.indexAfter())
+  let type = $from.parent.contentMatchAt($to.indexAfter()).defaultType
   if (!type || !type.isTextblock) return false
   if (dispatch) {
     let side = (!$from.parentOffset && $to.index() < $to.parent.childCount ? $from : $to).pos
@@ -295,7 +295,7 @@ export function splitBlock(state, dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
     if (state.selection instanceof TextSelection) tr.deleteSelection()
-    let deflt = $from.depth == 0 ? null : $from.node(-1).defaultContentType($from.indexAfter(-1))
+    let deflt = $from.depth == 0 ? null : $from.node(-1).contentMatchAt($from.indexAfter(-1)).defaultType
     let types = atEnd && deflt ? [{type: deflt}] : null
     let can = canSplit(tr.doc, $from.pos, 1, types)
     if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, deflt && [{type: deflt}])) {
