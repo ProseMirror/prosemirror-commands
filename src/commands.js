@@ -291,6 +291,8 @@ export function splitBlock(state, dispatch) {
     return true
   }
 
+  if (!$from.parent.isBlock) return false
+
   if (dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
