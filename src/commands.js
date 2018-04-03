@@ -407,22 +407,23 @@ export function wrapIn(nodeType, attrs) {
 }
 
 // :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
-// Returns a command that tries to set the textblock around the
-// selection to the given node type with the given attributes.
+// Returns a command that tries to set the selected textblocks to the
+// given node type with the given attributes.
 export function setBlockType(nodeType, attrs) {
   return function(state, dispatch) {
     let {from, to} = state.selection
-    let firstTextblock = null, firstPos = -1
+    let applicable = false
     state.doc.nodesBetween(from, to, (node, pos) => {
-      if (firstTextblock) return false
-      if (node.isTextblock) {
-        firstTextblock = node
-        firstPos = pos
+      if (applicable) return false
+      if (!node.isTextblock || node.hasMarkup(nodeType, attrs)) return
+      if (node.type == nodeType) {
+        applicable = true
+      } else {
+        let $pos = state.doc.resolve(pos), index = $pos.index()
+        applicable = $pos.parent.canReplaceWith(index, index + 1, nodeType)
       }
     })
-    if (!firstTextblock || firstTextblock.hasMarkup(nodeType, attrs)) return false
-    let $firstPos = state.doc.resolve(firstPos), index = $firstPos.index()
-    if (!$firstPos.parent.canReplaceWith(index, index + 1, nodeType)) return false
+    if (!applicable) return false
     if (dispatch) dispatch(state.tr.setBlockType(from, to, nodeType, attrs).scrollIntoView())
     return true
   }

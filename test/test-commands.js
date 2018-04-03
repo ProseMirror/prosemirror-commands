@@ -398,11 +398,11 @@ describe("setBlockType", () => {
      apply(doc(p("a<a>bc"), p("def"), ul(li(p("ghi"), p("jk<b>l")))), setCode,
            doc(pre("a<a>bc"), pre("def"), ul(li(p("ghi"), pre("jk<b>l"))))))
 
-  it("returns false when the first textblock in the selection is already this type", () =>
-     apply(doc(pre("a<a>bc"), p("de<b>f")), setCode, null))
+  it("returns false when all textblocks in the selection are already this type", () =>
+     apply(doc(pre("a<a>bc"), pre("de<b>f")), setCode, null))
 
-  it("returns false when the first textblock in the selection can't be changed", () =>
-     apply(doc(ul(p("a<a>bc"), p("de<b>f"))), setCode, null))
+  it("returns false when the selected blocks can't be changed", () =>
+     apply(doc(ul(p("a<a>b<b>c"), p("def"))), setCode, null))
 })
 
 describe("selectParentNode", () => {
