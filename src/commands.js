@@ -122,7 +122,7 @@ export function joinForward(state, dispatch, view) {
       (textblockAt(after, "start") || NodeSelection.isSelectable(after))) {
     if (dispatch) {
       let tr = state.tr.deleteRange($cursor.before(), $cursor.after())
-      tr.setSelection(textblockAt(after, "start") ? Selection.findFrom($cut, 1)
+      tr.setSelection(textblockAt(after, "start") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos)), 1)
                       : NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)))
       dispatch(tr.scrollIntoView())
     }
