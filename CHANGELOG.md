@@ -1,3 +1,13 @@
+## 1.0.6 (2018-04-04)
+
+### Bug fixes
+
+The [`setBlockType` command](https://prosemirror.net/docs/ref/#commands.setBlockType) command is now considered applicable when _any_ of the selected textblocks can be changed (it used to only look at the first one).
+
+Fix crash when calling [`splitBlock`](https://prosemirror.net/docs/ref/#commands.splitBlock) when the selection isn't in a block node (by disabling the command in that case).
+
+Fixes an issue where [`joinForward`](https://prosemirror.net/docs/ref/#commands.joinForward) might create a selection pointing into the old document.
+
 ## 1.0.5 (2018-01-30)
 
 ### Bug fixes
