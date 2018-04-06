@@ -45,7 +45,7 @@ export function joinBackward(state, dispatch, view) {
       (textblockAt(before, "end") || NodeSelection.isSelectable(before))) {
     if (dispatch) {
       let tr = state.tr.deleteRange($cursor.before(), $cursor.after())
-      tr.setSelection(textblockAt(before, "end") ? Selection.findFrom(tr.doc.resolve($cursor.before()), -1)
+      tr.setSelection(textblockAt(before, "end") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)
                       : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
       dispatch(tr.scrollIntoView())
     }
