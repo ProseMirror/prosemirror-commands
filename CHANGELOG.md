@@ -1,3 +1,9 @@
+## 1.0.7 (2018-04-09)
+
+### Bug fixes
+
+Fixes an issue where [`joinBackward`](https://prosemirror.net/docs/ref/#commands.joinBackward) might create a selection pointing into the old document.
+
 ## 1.0.6 (2018-04-04)
 
 ### Bug fixes
