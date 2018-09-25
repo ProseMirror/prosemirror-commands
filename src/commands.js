@@ -52,8 +52,8 @@ export function joinBackward(state, dispatch, view) {
     return true
   }
 
-  // If the node before is an atom, delete it
-  if (before.isAtom && $cut.depth == $cursor.depth - 1) {
+  // If the node before is an inline atom, delete it
+  if (before.isAtom && before.isInline && $cut.depth == $cursor.depth - 1) {
     if (dispatch) dispatch(state.tr.delete($cut.pos - before.nodeSize, $cut.pos).scrollIntoView())
     return true
   }
