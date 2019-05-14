@@ -1,3 +1,9 @@
+## 1.0.8 (2019-05-14)
+
+### Bug fixes
+
+Fix a crash caused by using a position potentially outside the document in [`splitBlock`](https://prosemirror.net/docs/ref/#commands.splitBlock).
+
 ## 1.0.7 (2018-04-09)
 
 ### Bug fixes
