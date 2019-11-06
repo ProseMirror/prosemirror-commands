@@ -3,6 +3,7 @@
   "version": "1.0.8",
   "description": "Editing commands for ProseMirror",
   "main": "dist/commands.js",
+  "module": "src/commands.js",
   "license": "MIT",
   "maintainers": [
     {
