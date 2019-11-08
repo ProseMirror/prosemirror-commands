@@ -1,7 +1,7 @@
 import buble from '@rollup/plugin-buble'
 
 export default {
-  input: 'src/commands.js',
+  input: './src/commands.js',
   output: {
     dir: 'dist',
     format: 'cjs',
