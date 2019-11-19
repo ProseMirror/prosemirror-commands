@@ -5,7 +5,7 @@ const ist = require("ist")
 
 const {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
        wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
-       selectParentNode, autoJoin, toggleMark} = require("../dist/commands")
+       selectParentNode, autoJoin, toggleMark} = require("..")
 
 function selFor(doc) {
   let a = doc.tag.a
