@@ -2,7 +2,7 @@
   "name": "@neosapience/prosemirror-commands",
   "version": "1.1.2",
   "description": "Editing commands for ProseMirror",
-  "main": "dist/index.js",
+  "main": "src/commands.js",
   "module": "dist/index.es.js",
   "license": "MIT",
   "maintainers": [
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/prosemirror/prosemirror-commands.git"
+    "url": "git://github.com/neosapience/prosemirror-commands.git"
   },
   "dependencies": {
     "prosemirror-model": "^1.0.0",
