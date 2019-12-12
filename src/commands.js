@@ -1,6 +1,7 @@
 import {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} from "prosemirror-transform"
 import {Slice, Fragment} from "prosemirror-model"
 import {Selection, TextSelection, NodeSelection, AllSelection} from "prosemirror-state"
+import nanoid from 'nanoid'
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Delete the selection, if there is one.
@@ -321,7 +322,15 @@ export function splitBlock(state, dispatch) {
 export function splitBlockKeepMarks(state, dispatch) {
   return splitBlock(state, dispatch && (tr => {
     let marks = state.storedMarks || (state.selection.$to.parentOffset && state.selection.$from.marks())
-    if (marks) tr.ensureMarks(marks)
+    if (marks) {
+      for (let index = 0; index < marks.length; index++) {
+        const mark = marks[index]
+        if (mark.type.name === 'query') {
+          mark.attrs.id = nanoid(10)
+        }
+      }      
+      tr.ensureMarks(marks)
+    }
     dispatch(tr)
   }))
 }
@@ -453,6 +462,7 @@ function markApplies(doc, ranges, type) {
 // marks](#state.EditorState.storedMarks) instead of a range of the
 // document.
 export function toggleMark(markType, attrs) {
+  console.log('toggleMark')
   return function(state, dispatch) {
     let {empty, $cursor, ranges} = state.selection
     if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType)) return false
