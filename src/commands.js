@@ -322,15 +322,7 @@ export function splitBlock(state, dispatch) {
 export function splitBlockKeepMarks(state, dispatch) {
   return splitBlock(state, dispatch && (tr => {
     let marks = state.storedMarks || (state.selection.$to.parentOffset && state.selection.$from.marks())
-    if (marks) {
-      for (let index = 0; index < marks.length; index++) {
-        const mark = marks[index]
-        if (mark.type.name === 'query') {
-          mark.attrs.id = nanoid(10)
-        }
-      }      
-      tr.ensureMarks(marks)
-    }
+    if (marks) tr.ensureMarks(marks)
     dispatch(tr)
   }))
 }
@@ -569,7 +561,7 @@ let del = chainCommands(deleteSelection, joinForward, selectNodeForward)
 // * **Mod-Delete** to `deleteSelection`, `joinForward`, `selectNodeForward`
 // * **Mod-a** to `selectAll`
 export let pcBaseKeymap = {
-  "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlockKeepMarks),
+  "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
   "Mod-Enter": exitCode,
   "Backspace": backspace,
   "Mod-Backspace": backspace,
