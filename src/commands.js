@@ -284,7 +284,7 @@ export function liftEmptyBlock(state, dispatch) {
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Split the parent block of the selection. If the selection is a text
 // selection, also delete its content.
-export function splitBlock(state, dispatch) {
+export function splitBlock(state, dispatch, view) {
   let {$from, $to} = state.selection
   if (state.selection instanceof NodeSelection && state.selection.node.isBlock) {
     if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return false
@@ -297,6 +297,16 @@ export function splitBlock(state, dispatch) {
   if (dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
+
+    if ($from.nodeBefore && $to.nodeAfter) {
+      let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+      let rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
+      let rightText = $to.nodeAfter.text
+      if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
+        tr.removeMark($to.pos, $to.pos + rightText.length, rightQuery[0]).addMark($to.pos, $to.pos + rightText.length, view.state.schema.marks.query.create({id:(Math.random() + 1).toString(36).substr(2, 5)}))
+      }  
+    }
+    
     if (state.selection instanceof TextSelection) tr.deleteSelection()
     let deflt = $from.depth == 0 ? null : $from.node(-1).contentMatchAt($from.indexAfter(-1)).defaultType
     let types = atEnd && deflt ? [{type: deflt}] : null
