@@ -303,7 +303,8 @@ export function splitBlock(state, dispatch, view) {
       let rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
       let rightText = $to.nodeAfter.text
       if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
-        tr.removeMark($to.pos, $to.pos + rightText.length, rightQuery[0]).addMark($to.pos, $to.pos + rightText.length, view.state.schema.marks.query.create({id:(Math.random() + 1).toString(36).substr(2, 5)}))
+        tr.insert($to.pos, view.state.schema.nodes.separator.create())
+        tr.removeMark($to.pos + 1, $to.pos + rightText.length + 1, rightQuery[0]).addMark($to.pos + 1, $to.pos + rightText.length + 1, view.state.schema.marks.query.create({id:(Math.random() + 1).toString(36).substr(2, 5)}))
       }  
     }
     
