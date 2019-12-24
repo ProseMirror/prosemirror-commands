@@ -1,7 +1,6 @@
 import {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} from "prosemirror-transform"
 import {Slice, Fragment} from "prosemirror-model"
 import {Selection, TextSelection, NodeSelection, AllSelection} from "prosemirror-state"
-import nanoid from 'nanoid'
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Delete the selection, if there is one.
@@ -459,6 +458,74 @@ function markApplies(doc, ranges, type) {
     if (can) return true
   }
   return false
+}
+
+function getMarkRange($pos = null, type = null) {
+
+  if (!$pos || !type) {
+    return false
+  }
+
+  const start = $pos.parent.childAfter($pos.parentOffset)
+
+  if (!start.node) {
+    return false
+  }
+
+  const link = start.node.marks.find(mark => mark.type === type)
+  if (!link) {
+    return false
+  }
+
+  let startIndex = $pos.index()
+  let startPos = $pos.start() + start.offset
+  let endIndex = startIndex + 1
+  let endPos = startPos + start.node.nodeSize
+
+  while (startIndex > 0 && link.isInSet($pos.parent.child(startIndex - 1).marks)) {
+    startIndex -= 1
+    startPos -= $pos.parent.child(startIndex).nodeSize
+  }
+
+  while (endIndex < $pos.parent.childCount && link.isInSet($pos.parent.child(endIndex).marks)) {
+    endPos += $pos.parent.child(endIndex).nodeSize
+    endIndex += 1
+  }
+
+  return { from: startPos, to: endPos }
+
+}
+
+export function updateMarkAttrs(type, attrs) {
+  return (state, dispatch) => {
+    const { tr, selection, doc } = state
+    let { from, to } = selection
+    const { $from, $to } = selection
+
+    if ($from.nodeBefore && $from.nodeAfter && $from.nodeBefore.type.name === 'text' && $from.nodeAfter.type.name === 'text') {
+      const rangeStart = getMarkRange($from, type)
+      if (rangeStart) {
+        from = rangeStart.from
+      }
+    }
+
+    if ($to.nodeBefore && $to.nodeAfter && $to.nodeBefore.type.name === 'text' && $to.nodeAfter.type.name === 'text') {
+      const rangeEnd = getMarkRange($to, type)
+      if (rangeEnd) {
+        to = rangeEnd.to
+      }
+    }
+    
+    const hasMark = doc.rangeHasMark(from, to, type)
+
+    if (hasMark) {
+      tr.removeMark(from, to, type)
+    }
+
+    tr.addMark(from, to, type.create(attrs))
+
+    return dispatch(tr)
+  }
 }
 
 // :: (MarkType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
