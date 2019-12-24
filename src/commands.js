@@ -466,8 +466,11 @@ function getMarkRange($pos = null, type = null) {
     return false
   }
 
-  const start = $pos.parent.childAfter($pos.parentOffset)
+  let start = $pos.parent.childAfter($pos.parentOffset)
 
+  if (!start.node) {
+    start = $pos.parent.childBefore($pos.parentOffset)
+  }
   if (!start.node) {
     return false
   }
@@ -502,27 +505,29 @@ export function updateMarkAttrs(type, attrs) {
     let { from, to } = selection
     const { $from, $to } = selection
 
-    if ($from.nodeBefore && $from.nodeAfter && $from.nodeBefore.type.name === 'text' && $from.nodeAfter.type.name === 'text') {
+    if (($from.nodeBefore && $from.nodeAfter && $from.nodeBefore.type.name === 'text' && $from.nodeAfter.type.name === 'text')
+    || ($from.nodeAfter === null && $from.nodeBefore && $from.nodeBefore.type.name === 'text')) {
       const rangeStart = getMarkRange($from, type)
       if (rangeStart) {
         from = rangeStart.from
       }
     }
 
-    if ($to.nodeBefore && $to.nodeAfter && $to.nodeBefore.type.name === 'text' && $to.nodeAfter.type.name === 'text') {
+    if (($to.nodeBefore && $to.nodeAfter && $to.nodeBefore.type.name === 'text' && $to.nodeAfter.type.name === 'text')
+    || ($to.nodeBefore === null && $to.nodeAfter && $to.nodeAfter.type.name === 'text')) {
       const rangeEnd = getMarkRange($to, type)
       if (rangeEnd) {
         to = rangeEnd.to
       }
     }
     
-    const hasMark = doc.rangeHasMark(from, to, type)
+    // const hasMark = doc.rangeHasMark(from, to, type)
 
-    if (hasMark) {
-      tr.removeMark(from, to, type)
-    }
+    // if (hasMark) {
+    //   tr.removeMark(from, to, type)
+    // }
 
-    tr.addMark(from, to, type.create(attrs))
+    tr.updateMarkAttrs(from, to, type.create(attrs))
 
     return dispatch(tr)
   }
