@@ -499,7 +499,7 @@ function getMarkRange($pos = null, type = null) {
 
 }
 
-export function updateMarkAttrs(type, attrs) {
+export function updateQueryAttrs(type, attrs) {
   return (state, dispatch) => {
     const { tr, selection, doc } = state
     let { from, to } = selection
@@ -520,15 +520,8 @@ export function updateMarkAttrs(type, attrs) {
         to = rangeEnd.to
       }
     }
-    
-    // const hasMark = doc.rangeHasMark(from, to, type)
 
-    // if (hasMark) {
-    //   tr.removeMark(from, to, type)
-    // }
-
-    tr.updateMarkAttrs(from, to, type.create(attrs))
-
+    tr.updateQueryAttrs(from, to, type.create(attrs), attrs)
     return dispatch(tr)
   }
 }
