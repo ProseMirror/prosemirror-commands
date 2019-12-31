@@ -1,6 +1,7 @@
 import {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} from "prosemirror-transform"
 import {Slice, Fragment} from "prosemirror-model"
 import {Selection, TextSelection, NodeSelection, AllSelection} from "prosemirror-state"
+import nanoid from "nanoid"
 
 // :: (EditorState, ?(tr: Transaction)) → bool
 // Delete the selection, if there is one.
@@ -303,7 +304,7 @@ export function splitBlock(state, dispatch, view) {
       let rightText = $to.nodeAfter.text
       if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
         tr.insert($to.pos, view.state.schema.nodes.separator.create())
-        tr.removeMark($to.pos + 1, $to.pos + rightText.length + 1, rightQuery[0]).addMark($to.pos + 1, $to.pos + rightText.length + 1, view.state.schema.marks.query.create({id:(Math.random() + 1).toString(36).substr(2, 5)}))
+        tr.removeMark($to.pos + 1, $to.pos + rightText.length + 1, rightQuery[0]).addMark($to.pos + 1, $to.pos + rightText.length + 1, view.state.schema.marks.query.create({id: nanoid(10)}))
       }
     } else if ($from.nodeBefore && $to.nodeAfter === null) {
       let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
