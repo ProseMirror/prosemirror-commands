@@ -304,7 +304,7 @@ export function splitBlock(state, dispatch, view) {
       let rightText = $to.nodeAfter.text
       if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
         tr.insert($to.pos, view.state.schema.nodes.separator.create())
-        tr.removeMark($to.pos + 1, $to.pos + rightText.length + 1, rightQuery[0]).addMark($to.pos + 1, $to.pos + rightText.length + 1, view.state.schema.marks.query.create({id: nanoid(10)}))
+        tr.removeMark($to.pos + 1, $to.pos + rightText.length + 1, rightQuery[0]).addMark($to.pos + 1, $to.pos + rightText.length + 1, view.state.schema.marks.query.create({id: nanoid()}))
       }
     } else if ($from.nodeBefore && $to.nodeAfter === null) {
       let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
