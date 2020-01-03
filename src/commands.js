@@ -227,6 +227,14 @@ export function newlineInCode(state, dispatch) {
   return true
 }
 
+function defaultBlockAt(match) {
+  for (let i = 0; i < match.edgeCount; i++) {
+    let {type} = match.edge(i)
+    if (type.isTextblock && !type.hasRequiredAttrs()) return type
+  }
+  return null
+}
+
 // :: (EditorState, ?(tr: Transaction)) → bool
 // When the selection is in a node with a truthy
 // [`code`](#model.NodeSpec.code) property in its spec, create a
@@ -234,7 +242,7 @@ export function newlineInCode(state, dispatch) {
 export function exitCode(state, dispatch) {
   let {$head, $anchor} = state.selection
   if (!$head.parent.type.spec.code || !$head.sameParent($anchor)) return false
-  let above = $head.node(-1), after = $head.indexAfter(-1), type = above.contentMatchAt(after).defaultType
+  let above = $head.node(-1), after = $head.indexAfter(-1), type = defaultBlockAt(above.contentMatchAt(after))
   if (!above.canReplaceWith(after, after, type)) return false
   if (dispatch) {
     let pos = $head.after(), tr = state.tr.replaceWith(pos, pos, type.createAndFill())
@@ -250,7 +258,7 @@ export function exitCode(state, dispatch) {
 export function createParagraphNear(state, dispatch) {
   let {$from, $to} = state.selection
   if ($from.parent.inlineContent || $to.parent.inlineContent) return false
-  let type = $from.parent.contentMatchAt($to.indexAfter()).defaultType
+  let type = defaultBlockAt($from.parent.contentMatchAt($to.indexAfter()))
   if (!type || !type.isTextblock) return false
   if (dispatch) {
     let side = (!$from.parentOffset && $to.index() < $to.parent.childCount ? $from : $to).pos
@@ -297,7 +305,7 @@ export function splitBlock(state, dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
     if (state.selection instanceof TextSelection) tr.deleteSelection()
-    let deflt = $from.depth == 0 ? null : $from.node(-1).contentMatchAt($from.indexAfter(-1)).defaultType
+    let deflt = $from.depth == 0 ? null : defaultBlockAt($from.node(-1).contentMatchAt($from.indexAfter(-1)))
     let types = atEnd && deflt ? [{type: deflt}] : null
     let can = canSplit(tr.doc, tr.mapping.map($from.pos), 1, types)
     if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, deflt && [{type: deflt}])) {
