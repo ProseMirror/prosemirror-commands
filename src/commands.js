@@ -424,6 +424,26 @@ export function wrapIn(nodeType, attrs) {
   }
 }
 
+export function setBlockTypePos(from, nodeType, attrs) {
+  return function(state, dispatch) {
+    
+    let applicable = false
+    state.doc.nodesBetween(from, from, (node, pos) => {
+      if (applicable) return false
+      if (!node.isTextblock || node.hasMarkup(nodeType, attrs)) return
+      if (node.type == nodeType) {
+        applicable = true
+      } else {
+        let $pos = state.doc.resolve(pos), index = $pos.index()
+        applicable = $pos.parent.canReplaceWith(index, index + 1, nodeType)
+      }
+    })
+    if (!applicable) return false
+    if (dispatch) dispatch(state.tr.setBlockType(from, from, nodeType, attrs).scrollIntoView())
+    return true
+  }
+}
+
 // :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
 // Returns a command that tries to set the selected textblocks to the
 // given node type with the given attributes.
