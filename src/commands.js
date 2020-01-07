@@ -489,7 +489,7 @@ function getMarkRange($pos = null, type = null) {
 
   let start = $pos.parent.childAfter($pos.parentOffset)
 
-  if (!start.node) {
+  if (!start.node || start.node.type.name === 'separator') {
     start = $pos.parent.childBefore($pos.parentOffset)
   }
   if (!start.node) {
@@ -527,7 +527,8 @@ export function updateQueryAttrs(type, attrs) {
     const { $from, $to } = selection
 
     if (($from.nodeBefore && $from.nodeAfter && $from.nodeBefore.type.name === 'text' && $from.nodeAfter.type.name === 'text')
-    || ($from.nodeAfter === null && $from.nodeBefore && $from.nodeBefore.type.name === 'text')) {
+    || ($from.nodeAfter === null && $from.nodeBefore && $from.nodeBefore.type.name === 'text')
+    || ($from.nodeBefore && $from.nodeAfter && $from.nodeBefore.type.name === 'text' && $from.nodeAfter.type.name === 'separator')) {
       const rangeStart = getMarkRange($from, type)
       if (rangeStart) {
         from = rangeStart.from
@@ -535,7 +536,8 @@ export function updateQueryAttrs(type, attrs) {
     }
 
     if (($to.nodeBefore && $to.nodeAfter && $to.nodeBefore.type.name === 'text' && $to.nodeAfter.type.name === 'text')
-    || ($to.nodeBefore === null && $to.nodeAfter && $to.nodeAfter.type.name === 'text')) {
+    || ($to.nodeBefore === null && $to.nodeAfter && $to.nodeAfter.type.name === 'text')
+    || ($to.nodeBefore && $to.nodeAfter && $to.nodeBefore.type.name === 'separator' && $to.nodeAfter.type.name === 'text')) {
       const rangeEnd = getMarkRange($to, type)
       if (rangeEnd) {
         to = rangeEnd.to
