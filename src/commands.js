@@ -281,10 +281,7 @@ export function liftEmptyBlock(state, dispatch) {
   return true
 }
 
-// :: (EditorState, ?(tr: Transaction)) → bool
-// Split the parent block of the selection. If the selection is a text
-// selection, also delete its content.
-export function splitBlock(state, dispatch, view) {
+function newLine (state, dispatch) {
   let {$from, $to} = state.selection
   if (state.selection instanceof NodeSelection && state.selection.node.isBlock) {
     if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return false
@@ -297,21 +294,6 @@ export function splitBlock(state, dispatch, view) {
   if (dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
-
-    if ($from.nodeBefore && $to.nodeAfter) {
-      let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
-      let rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
-      let rightText = $to.nodeAfter.text
-      if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
-        tr.insert($to.pos, view.state.schema.nodes.separator.create())
-        tr.removeMark($to.pos + 1, $to.pos + rightText.length + 1, rightQuery[0]).addMark($to.pos + 1, $to.pos + rightText.length + 1, view.state.schema.marks.query.create({id: nanoid()}))
-      }
-    } else if ($from.nodeBefore && $to.nodeAfter === null) {
-      let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
-      if (leftQuery.length) {
-        tr.insert($to.pos, view.state.schema.nodes.separator.create())
-      }
-    }
     
     if (state.selection instanceof TextSelection) tr.deleteSelection()
     let deflt = $from.depth == 0 ? null : $from.node(-1).contentMatchAt($from.indexAfter(-1)).defaultType
@@ -329,6 +311,44 @@ export function splitBlock(state, dispatch, view) {
     }
     dispatch(tr.scrollIntoView())
   }
+}
+
+// :: (EditorState, ?(tr: Transaction)) → bool
+// Split the parent block of the selection. If the selection is a text
+// selection, also delete its content.
+export function splitBlock(state, dispatch, view) {
+  const { selection } = state
+  const position = selection.$cursor ? selection.$cursor.pos : selection.$to.pos
+  const tr = state.tr
+
+  if (selection.$cursor && selection.$cursor.nodeBefore && selection.$cursor.nodeAfter) {
+    let leftQuery = selection.$cursor.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    let rightQuery = selection.$cursor.nodeAfter.marks.filter(mark => mark.type.name === 'query')
+    let leftSeparator = selection.$cursor.nodeBefore.type.name === 'separator'
+    let rightSeparator = selection.$cursor.nodeAfter.type.name === 'separator'
+    let rightText = selection.$cursor.nodeAfter.text
+    if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
+      tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(position, position + rightText.length, state.schema.marks.query.create({id: nanoid()}))
+      const node = view.state.schema.nodes.separator.create()
+      tr.insert(position, node)
+      dispatch(tr)
+    } else if (leftSeparator || rightSeparator) {
+      newLine(state, dispatch, view)
+    }
+  } else if (selection.$cursor && selection.$cursor.nodeBefore && selection.$cursor.nodeAfter === null) {
+    let leftQuery = selection.$cursor.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    let leftSeparator = selection.$cursor.nodeBefore.type.name === 'separator'
+    if (leftQuery.length) {
+      const node = view.state.schema.nodes.separator.create()
+      tr.insert(position, node)
+      dispatch(tr)
+    } else if (leftSeparator) {
+      newLine(state, dispatch, view)
+    }
+  } else if (selection.$cursor && selection.$cursor.nodeBefore === null) {
+    newLine(state, dispatch, view)
+  }
+
   return true
 }
 
