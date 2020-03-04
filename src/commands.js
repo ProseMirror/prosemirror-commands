@@ -281,7 +281,7 @@ export function liftEmptyBlock(state, dispatch) {
   return true
 }
 
-function newLine (state, dispatch) {
+function newLine (state, dispatch, forwardCursor) {
   let {$from, $to} = state.selection
   if (state.selection instanceof NodeSelection && state.selection.node.isBlock) {
     if (!$from.parentOffset || !canSplit(state.doc, $from.pos)) return false
@@ -304,7 +304,10 @@ function newLine (state, dispatch) {
       can = true
     }
     if (can) {
-      tr.split(tr.mapping.map($from.pos), 1, null)
+      tr.split(tr.mapping.map($from.pos) + (forwardCursor ? 1 : 0), 1, null)
+      if (forwardCursor) {
+        tr.setSelection(TextSelection.create(tr.doc, $from.pos + 2))
+      }
       if (!atEnd && !$from.parentOffset && $from.parent.type != deflt &&
           $from.node(-1).canReplace($from.index(-1), $from.indexAfter(-1), Fragment.from(deflt.create(), $from.parent)))
         tr.setNodeMarkup(tr.mapping.map($from.before()), deflt)
@@ -317,36 +320,46 @@ function newLine (state, dispatch) {
 // Split the parent block of the selection. If the selection is a text
 // selection, also delete its content.
 export function splitBlock(state, dispatch, view) {
-  const { selection } = state
-  const position = selection.$cursor ? selection.$cursor.pos : selection.$to.pos
+  let {$from, $to, $cursor} = state.selection
+  const position = $cursor ? $cursor.pos : $to.pos
   const tr = state.tr
 
-  if (selection.$cursor && selection.$cursor.nodeBefore && selection.$cursor.nodeAfter) {
-    let leftQuery = selection.$cursor.nodeBefore.marks.filter(mark => mark.type.name === 'query')
-    let rightQuery = selection.$cursor.nodeAfter.marks.filter(mark => mark.type.name === 'query')
-    let leftSeparator = selection.$cursor.nodeBefore.type.name === 'separator'
-    let rightSeparator = selection.$cursor.nodeAfter.type.name === 'separator'
-    let rightText = selection.$cursor.nodeAfter.text
+  if ($from.nodeBefore && $to.nodeAfter) {
+    let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    let rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
+    let leftSeparator = $from.nodeBefore.type.name === 'separator'
+    let rightSeparator = $to.nodeAfter.type.name === 'separator'
+    let rightText = $to.nodeAfter.text
     if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
       tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(position, position + rightText.length, state.schema.marks.query.create({id: nanoid()}))
-      const node = view.state.schema.nodes.separator.create()
-      tr.insert(position, node)
-      dispatch(tr)
-    } else if (leftSeparator || rightSeparator) {
-      newLine(state, dispatch, view)
-    }
-  } else if (selection.$cursor && selection.$cursor.nodeBefore && selection.$cursor.nodeAfter === null) {
-    let leftQuery = selection.$cursor.nodeBefore.marks.filter(mark => mark.type.name === 'query')
-    let leftSeparator = selection.$cursor.nodeBefore.type.name === 'separator'
-    if (leftQuery.length) {
-      const node = view.state.schema.nodes.separator.create()
-      tr.insert(position, node)
+      if (state.selection instanceof TextSelection) {
+        tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
+      } else {
+        const node = view.state.schema.nodes.separator.create()
+        tr.insert(position, node)
+      }
       dispatch(tr)
     } else if (leftSeparator) {
-      newLine(state, dispatch, view)
+      newLine(state, dispatch)
+    } else if (rightSeparator) {
+      newLine(state, dispatch, true)
     }
-  } else if (selection.$cursor && selection.$cursor.nodeBefore === null) {
-    newLine(state, dispatch, view)
+  } else if ($from.nodeBefore && $to.nodeAfter === null) {
+    let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    let leftSeparator = $from.nodeBefore.type.name === 'separator'
+    if (leftQuery.length) {
+      if (state.selection instanceof TextSelection) {
+        tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
+      } else {
+        const node = view.state.schema.nodes.separator.create()
+        tr.insert(position, node)
+      }
+      dispatch(tr)
+    } else if (leftSeparator) {
+      newLine(state, dispatch)
+    }
+  } else if ($from.nodeBefore === null) {
+    newLine(state, dispatch)
   }
 
   return true
