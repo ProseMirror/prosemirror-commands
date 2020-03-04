@@ -542,7 +542,7 @@ function getMarkRange($pos = null, type = null) {
 }
 
 export function updateQueryAttrs(type, attrs) {
-  return (state, dispatch) => {
+  return (state, dispatch, view) => {
     const { tr, selection, doc } = state
     let { from, to } = selection
     const { $from, $to } = selection
@@ -562,6 +562,14 @@ export function updateQueryAttrs(type, attrs) {
       const rangeEnd = getMarkRange($to, type)
       if (rangeEnd) {
         to = rangeEnd.to
+      }
+    }
+
+    if (attrs.hasOwnProperty('silence')) {
+      const $queryEnd = doc.resolve(to)
+      if ($queryEnd.nodeAfter === null && $queryEnd.nodeBefore && $queryEnd.nodeBefore.type.name === 'text') {
+        const node = view.state.schema.nodes.separator.create()
+        tr.insert(to, node)
       }
     }
 
