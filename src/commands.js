@@ -306,7 +306,7 @@ function newLine (state, dispatch, forwardCursor) {
     if (can) {
       tr.split(tr.mapping.map($from.pos) + (forwardCursor ? 1 : 0), 1, null)
       if (forwardCursor) {
-        tr.setSelection(TextSelection.create(tr.doc, $from.pos + 2))
+        tr.setSelection(TextSelection.create(tr.doc, $from.pos + 3))
       }
       if (!atEnd && !$from.parentOffset && $from.parent.type != deflt &&
           $from.node(-1).canReplace($from.index(-1), $from.indexAfter(-1), Fragment.from(deflt.create(), $from.parent)))
