@@ -320,18 +320,25 @@ function newLine (state, dispatch, forwardCursor) {
 // Split the parent block of the selection. If the selection is a text
 // selection, also delete its content.
 export function splitBlock(state, dispatch, view) {
-  let {$from, $to, $cursor} = state.selection
+  const {$from, $to, $cursor} = state.selection
   const position = $cursor ? $cursor.pos : $to.pos
   const tr = state.tr
 
   if ($from.nodeBefore && $to.nodeAfter) {
-    let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
-    let rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
-    let leftSeparator = $from.nodeBefore.type.name === 'separator'
-    let rightSeparator = $to.nodeAfter.type.name === 'separator'
-    let rightText = $to.nodeAfter.text
-    if (leftQuery.length && rightQuery.length && rightText.length && leftQuery[0].attrs.id === rightQuery[0].attrs.id) {
+    const leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    const rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
+    const leftSeparator = $from.nodeBefore.type.name === 'separator'
+    const rightSeparator = $to.nodeAfter.type.name === 'separator'
+    const rightText = $to.nodeAfter.text
+    const leftText = $from.nodeBefore.text
+
+    if (leftQuery.length && rightQuery.length && rightText.length) {
       tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(position, position + rightText.length, state.schema.marks.query.create({id: nanoid()}))
+      if (rightQuery[0].attrs.silence !== 300) {
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 300}), {silence: 300})
+        tr.updateQueryAttrs(position, position + rightText.length, state.schema.marks.query.create({silence: rightQuery[0].attrs.silence}), {silence: rightQuery[0].attrs.silence})
+      }
+
       if (state.selection instanceof TextSelection) {
         tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
       } else {
@@ -345,8 +352,8 @@ export function splitBlock(state, dispatch, view) {
       newLine(state, dispatch, true)
     }
   } else if ($from.nodeBefore && $to.nodeAfter === null) {
-    let leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
-    let leftSeparator = $from.nodeBefore.type.name === 'separator'
+    const leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    const leftSeparator = $from.nodeBefore.type.name === 'separator'
     if (leftQuery.length) {
       if (state.selection instanceof TextSelection) {
         tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
