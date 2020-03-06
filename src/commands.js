@@ -473,7 +473,7 @@ export function setBlockTypePos(from, nodeType, attrs) {
       }
     })
     if (!applicable) return false
-    if (dispatch) dispatch(state.tr.setBlockType(from, from, nodeType, attrs).scrollIntoView())
+    if (dispatch) dispatch(state.tr.setBlockType(from, from, nodeType, attrs))
     return true
   }
 }
