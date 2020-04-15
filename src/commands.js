@@ -75,12 +75,14 @@ function textblockAt(node, side) {
 // commands, as a fall-back behavior when the schema doesn't allow
 // deletion at the selected point.
 export function selectNodeBackward(state, dispatch, view) {
-  let {$cursor} = state.selection
-  if (!$cursor || (view ? !view.endOfTextblock("backward", state)
-                        : $cursor.parentOffset > 0))
-    return false
+  let {$head, empty} = state.selection, $cut = $head
+  if (!empty) return false
 
-  let $cut = findCutBefore($cursor), node = $cut && $cut.nodeBefore
+  if ($head.parent.isTextblock) {
+    if (view ? !view.endOfTextblock("backward", state) : $head.parentOffset > 0) return false
+    $cut = findCutBefore($head)
+  }
+  let node = $cut && $cut.nodeBefore
   if (!node || !NodeSelection.isSelectable(node)) return false
   if (dispatch)
     dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos - node.nodeSize)).scrollIntoView())
@@ -146,12 +148,14 @@ export function joinForward(state, dispatch, view) {
 // commands, to provide a fall-back behavior when the schema doesn't
 // allow deletion at the selected point.
 export function selectNodeForward(state, dispatch, view) {
-  let {$cursor} = state.selection
-  if (!$cursor || (view ? !view.endOfTextblock("forward", state)
-                        : $cursor.parentOffset < $cursor.parent.content.size))
-    return false
-
-  let $cut = findCutAfter($cursor), node = $cut && $cut.nodeAfter
+  let {$head, empty} = state.selection, $cut = $head
+  if (!empty) return false
+  if ($head.parent.isTextblock) {
+    if (view ? !view.endOfTextblock("forward", state) : $head.parentOffset < $head.parent.content.size)
+      return false
+    $cut = findCutAfter($head)
+  }
+  let node = $cut && $cut.nodeAfter
   if (!node || !NodeSelection.isSelectable(node)) return false
   if (dispatch)
     dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos)).scrollIntoView())
