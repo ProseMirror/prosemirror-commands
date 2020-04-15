@@ -1,3 +1,9 @@
+## 1.1.4 (2020-04-15)
+
+### Bug fixes
+
+`selectNodeForward` and `selectNodeBackward` will now also select nodes next to a gap cursor (or other custom empty selection type).
+
 ## 1.1.3 (2020-01-03)
 
 ### Bug fixes
