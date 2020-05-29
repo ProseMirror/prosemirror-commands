@@ -333,12 +333,17 @@ export function splitBlock(state, dispatch, view) {
     const leftText = $from.nodeBefore.text
 
     if (leftQuery.length && rightQuery.length && rightText.length) {
-      tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(position, position + rightText.length, state.schema.marks.query.create({id: nanoid()}))
-      if (rightQuery[0].attrs.silence !== 300) {
-        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 300}), {silence: 300})
-        tr.updateQueryAttrs(position, position + rightText.length, state.schema.marks.query.create({silence: rightQuery[0].attrs.silence}), {silence: rightQuery[0].attrs.silence})
-      }
-
+      const {silence, style, speed} = rightQuery[0].attrs
+      tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(
+        position,
+        position + rightText.length,
+        state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed}))
+        const lastCharacter = leftText.trim().slice(-1)
+        if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 300}), {silence: 300})
+        } else {
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 100}), {silence: 100})
+        }
       if (state.selection instanceof TextSelection) {
         tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
       } else {
@@ -354,7 +359,16 @@ export function splitBlock(state, dispatch, view) {
   } else if ($from.nodeBefore && $to.nodeAfter === null) {
     const leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
     const leftSeparator = $from.nodeBefore.type.name === 'separator'
+    const leftText = $from.nodeBefore.text
+
     if (leftQuery.length) {
+      const lastCharacter = leftText.trim().slice(-1)
+      if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 300}), {silence: 300})
+      } else {
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 100}), {silence: 100})
+      }
+
       if (state.selection instanceof TextSelection) {
         tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
       } else {
