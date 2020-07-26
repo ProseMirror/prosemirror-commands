@@ -319,6 +319,20 @@ describe("splitBlock", () => {
              hSchema.node("heading", {level: 1}),
              hSchema.node("paragraph", null, hSchema.text("foobar"))
            ])))
+
+  it("prefers textblocks", () => {
+    let s = new Schema({nodes: {
+      text: {},
+      para: {content: "text*", toDOM() { return ["p", 0] }},
+      section: {content: "para+", toDOM() { return ["section", 0] }},
+      doc: {content: "para* section*"}
+    }})
+    let doc = s.node("doc", null, [s.node("para", null, [s.text("hello")])])
+    doc.tag = {a: 3}
+    apply(doc, splitBlock,
+          s.node("doc", null, [s.node("para", null, [s.text("he")]),
+                               s.node("para", null, [s.text("llo")])]))
+  })
 })
 
 describe("splitBlockKeepMarks", () => {

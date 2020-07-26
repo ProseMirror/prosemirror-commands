@@ -76,12 +76,14 @@ function textblockAt(node, side) {
 // commands, as a fall-back behavior when the schema doesn't allow
 // deletion at the selected point.
 export function selectNodeBackward(state, dispatch, view) {
-  let {$cursor} = state.selection
-  if (!$cursor || (view ? !view.endOfTextblock("backward", state)
-                        : $cursor.parentOffset > 0))
-    return false
+  let {$head, empty} = state.selection, $cut = $head
+  if (!empty) return false
 
-  let $cut = findCutBefore($cursor), node = $cut && $cut.nodeBefore
+  if ($head.parent.isTextblock) {
+    if (view ? !view.endOfTextblock("backward", state) : $head.parentOffset > 0) return false
+    $cut = findCutBefore($head)
+  }
+  let node = $cut && $cut.nodeBefore
   if (!node || !NodeSelection.isSelectable(node)) return false
   if (dispatch)
     dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos - node.nodeSize)).scrollIntoView())
@@ -147,12 +149,14 @@ export function joinForward(state, dispatch, view) {
 // commands, to provide a fall-back behavior when the schema doesn't
 // allow deletion at the selected point.
 export function selectNodeForward(state, dispatch, view) {
-  let {$cursor} = state.selection
-  if (!$cursor || (view ? !view.endOfTextblock("forward", state)
-                        : $cursor.parentOffset < $cursor.parent.content.size))
-    return false
-
-  let $cut = findCutAfter($cursor), node = $cut && $cut.nodeAfter
+  let {$head, empty} = state.selection, $cut = $head
+  if (!empty) return false
+  if ($head.parent.isTextblock) {
+    if (view ? !view.endOfTextblock("forward", state) : $head.parentOffset < $head.parent.content.size)
+      return false
+    $cut = findCutAfter($head)
+  }
+  let node = $cut && $cut.nodeAfter
   if (!node || !NodeSelection.isSelectable(node)) return false
   if (dispatch)
     dispatch(state.tr.setSelection(NodeSelection.create(state.doc, $cut.pos)).scrollIntoView())
@@ -228,6 +232,14 @@ export function newlineInCode(state, dispatch) {
   return true
 }
 
+function defaultBlockAt(match) {
+  for (let i = 0; i < match.edgeCount; i++) {
+    let {type} = match.edge(i)
+    if (type.isTextblock && !type.hasRequiredAttrs()) return type
+  }
+  return null
+}
+
 // :: (EditorState, ?(tr: Transaction)) → bool
 // When the selection is in a node with a truthy
 // [`code`](#model.NodeSpec.code) property in its spec, create a
@@ -235,7 +247,7 @@ export function newlineInCode(state, dispatch) {
 export function exitCode(state, dispatch) {
   let {$head, $anchor} = state.selection
   if (!$head.parent.type.spec.code || !$head.sameParent($anchor)) return false
-  let above = $head.node(-1), after = $head.indexAfter(-1), type = above.contentMatchAt(after).defaultType
+  let above = $head.node(-1), after = $head.indexAfter(-1), type = defaultBlockAt(above.contentMatchAt(after))
   if (!above.canReplaceWith(after, after, type)) return false
   if (dispatch) {
     let pos = $head.after(), tr = state.tr.replaceWith(pos, pos, type.createAndFill())
@@ -251,7 +263,7 @@ export function exitCode(state, dispatch) {
 export function createParagraphNear(state, dispatch) {
   let {$from, $to} = state.selection
   if ($from.parent.inlineContent || $to.parent.inlineContent) return false
-  let type = $from.parent.contentMatchAt($to.indexAfter()).defaultType
+  let type = defaultBlockAt($from.parent.contentMatchAt($to.indexAfter()))
   if (!type || !type.isTextblock) return false
   if (dispatch) {
     let side = (!$from.parentOffset && $to.index() < $to.parent.childCount ? $from : $to).pos
@@ -296,7 +308,7 @@ function newLine (state, dispatch, forwardCursor) {
     let tr = state.tr
     
     if (state.selection instanceof TextSelection) tr.deleteSelection()
-    let deflt = $from.depth == 0 ? null : $from.node(-1).contentMatchAt($from.indexAfter(-1)).defaultType
+    let deflt = $from.depth == 0 ? null : defaultBlockAt($from.node(-1).contentMatchAt($from.indexAfter(-1)))
     let types = atEnd && deflt ? [{type: deflt}] : null
     let can = canSplit(tr.doc, tr.mapping.map($from.pos), 1, types)
     if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, deflt && [{type: deflt}])) {

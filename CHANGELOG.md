@@ -1,3 +1,15 @@
+## 1.1.4 (2020-04-15)
+
+### Bug fixes
+
+`selectNodeForward` and `selectNodeBackward` will now also select nodes next to a gap cursor (or other custom empty selection type).
+
+## 1.1.3 (2020-01-03)
+
+### Bug fixes
+
+Fix an issue where, since version 1.7.4 of prosemirror-model, `splitBlock` fails to create the expected new textblock in some schemas.
+
 ## 1.1.2 (2019-11-20)
 
 ### Bug fixes
