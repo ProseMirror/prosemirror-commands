@@ -394,7 +394,7 @@ export function splitBlock(state, dispatch, view) {
   } else if ($from.nodeBefore === null) {
     newLine(state, dispatch)
   }
-
+  view.composing = false
   return true
 }
 
