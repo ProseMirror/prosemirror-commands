@@ -336,6 +336,13 @@ export function splitBlock(state, dispatch, view) {
   const position = $cursor ? $cursor.pos : $to.pos
   const tr = state.tr
 
+  let savedQueryAttr = localStorage.getItem('DEFAULT_QUERY_ATTR')
+  if (savedQueryAttr) {
+    savedQueryAttr = JSON.parse(savedQueryAttr)
+  } else {
+    savedQueryAttr = {}
+  }
+
   if ($from.nodeBefore && $to.nodeAfter) {
     const leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
     const rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
@@ -352,9 +359,13 @@ export function splitBlock(state, dispatch, view) {
         state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed}))
         const lastCharacter = leftText.trim().slice(-1)
         if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
-          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 300}), {silence: 300})
+          const userSilence = savedQueryAttr.silence || 300
+          const userSpeed = savedQueryAttr.speed || 1
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
         } else {
-          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 100}), {silence: 100})
+          const userSilence = savedQueryAttr.silence || 100
+          const userSpeed = savedQueryAttr.speed || 1
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
         }
       if (state.selection instanceof TextSelection) {
         tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
@@ -376,9 +387,13 @@ export function splitBlock(state, dispatch, view) {
     if (leftQuery.length) {
       const lastCharacter = leftText.trim().slice(-1)
       if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
-        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 300}), {silence: 300})
+        const userSilence = savedQueryAttr.silence || 300
+        const userSpeed = savedQueryAttr.speed || 1
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
       } else {
-        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: 100}), {silence: 100})
+        const userSilence = savedQueryAttr.silence || 100
+        const userSpeed = savedQueryAttr.speed || 1
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
       }
 
       if (state.selection instanceof TextSelection) {
