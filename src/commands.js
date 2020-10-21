@@ -618,6 +618,7 @@ export function updateQueryAttrs(type, attrs) {
       if ($queryEnd.nodeAfter === null && $queryEnd.nodeBefore && $queryEnd.nodeBefore.type.name === 'text') {
         const node = view.state.schema.nodes.separator.create()
         tr.insert(to, node)
+        tr.setSelection(NodeSelection.create(tr.doc, to , to))
       }
     }
 
