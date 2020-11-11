@@ -359,12 +359,12 @@ export function splitBlock(state, dispatch, view) {
         state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed}))
         const lastCharacter = leftText.trim().slice(-1)
         if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
-          const userSilence = savedQueryAttr.silence || 300
-          const userSpeed = savedQueryAttr.speed || 1
+          const userSilence = savedQueryAttr.silence || silence || 300
+          const userSpeed = savedQueryAttr.speed || speed || 1
           tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
         } else {
-          const userSilence = savedQueryAttr.silence || 100
-          const userSpeed = savedQueryAttr.speed || 1
+          const userSilence = savedQueryAttr.silence || silence || 100
+          const userSpeed = savedQueryAttr.speed || speed || 1
           tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
         }
       if (state.selection instanceof TextSelection) {
@@ -386,13 +386,14 @@ export function splitBlock(state, dispatch, view) {
 
     if (leftQuery.length) {
       const lastCharacter = leftText.trim().slice(-1)
+      const {silence, style, speed} = leftQuery[0].attrs
       if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
-        const userSilence = savedQueryAttr.silence || 300
-        const userSpeed = savedQueryAttr.speed || 1
+        const userSilence = savedQueryAttr.silence || silence || 300
+        const userSpeed = savedQueryAttr.speed || speed || 1
         tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
       } else {
-        const userSilence = savedQueryAttr.silence || 100
-        const userSpeed = savedQueryAttr.speed || 1
+        const userSilence = savedQueryAttr.silence || silence || 100
+        const userSpeed = savedQueryAttr.speed || speed || 1
         tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
       }
 
