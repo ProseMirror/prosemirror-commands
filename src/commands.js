@@ -379,7 +379,8 @@ function deleteBarrier(state, $cut, dispatch) {
   if (before.type.spec.isolating || after.type.spec.isolating) return false
   if (joinMaybeClear(state, $cut, dispatch)) return true
 
-  if ($cut.parent.canReplace($cut.index(), $cut.index() + 1) &&
+  let canDelAfter = $cut.parent.canReplace($cut.index(), $cut.index() + 1)
+  if (canDelAfter &&
       (conn = (match = before.contentMatchAt(before.childCount)).findWrapping(after.type)) &&
       match.matchType(conn[0] || after.type).validEnd) {
     if (dispatch) {
@@ -400,6 +401,26 @@ function deleteBarrier(state, $cut, dispatch) {
   if (target != null && target >= $cut.depth) {
     if (dispatch) dispatch(state.tr.lift(range, target).scrollIntoView())
     return true
+  }
+
+  if (canDelAfter && after.isTextblock && textblockAt(before, "end")) {
+    let at = before, wrap = []
+    for (;;) {
+      wrap.push(at)
+      if (at.isTextblock) break
+      at = at.lastChild
+    }
+    if (at.canReplace(at.childCount, at.childCount, after.content)) {
+      if (dispatch) {
+        let end = Fragment.empty
+        for (let i = wrap.length - 1; i >= 0; i--) end = Fragment.from(wrap[i].copy(end))
+        let tr = state.tr.step(new ReplaceAroundStep($cut.pos - wrap.length, $cut.pos + after.nodeSize,
+                                                     $cut.pos + 1, $cut.pos + after.nodeSize - 1,
+                                                     new Slice(end, wrap.length, 0), 0, true))
+        dispatch(tr.scrollIntoView())
+      }
+      return true
+    }
   }
 
   return false
