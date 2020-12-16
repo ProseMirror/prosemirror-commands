@@ -342,6 +342,14 @@ export function splitBlock(state, dispatch, view) {
   } else {
     savedQueryAttr = {}
   }
+  const parent = $from.parent.type.name === 'paragraph' ? $from.parent : null
+  const paragraphActorId = parent ? parent.attrs.actor : null
+  let savedQuerySilence
+  let savedQuerySpeed
+  if (savedQueryAttr.hasOwnProperty(paragraphActorId)) {
+    savedQuerySilence = savedQueryAttr[paragraphActorId].silence
+    savedQuerySpeed = savedQueryAttr[paragraphActorId].speed
+  }
 
   if ($from.nodeBefore && $to.nodeAfter) {
     const leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
@@ -359,12 +367,12 @@ export function splitBlock(state, dispatch, view) {
         state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed}))
         const lastCharacter = leftText.trim().slice(-1)
         if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
-          const userSilence = savedQueryAttr.silence || 300
-          const userSpeed = savedQueryAttr.speed || speed || 1
+          const userSilence = savedQuerySilence || 300
+          const userSpeed = savedQuerySpeed || speed || 1
           tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
         } else {
-          const userSilence = savedQueryAttr.silence || 100
-          const userSpeed = savedQueryAttr.speed || speed || 1
+          const userSilence = savedQuerySilence || 100
+          const userSpeed = savedQuerySpeed || speed || 1
           tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
         }
       if (state.selection instanceof TextSelection) {
@@ -388,12 +396,12 @@ export function splitBlock(state, dispatch, view) {
       const lastCharacter = leftText.trim().slice(-1)
       const {silence, style, speed} = leftQuery[0].attrs
       if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
-        const userSilence = savedQueryAttr.silence || 300
-        const userSpeed = savedQueryAttr.speed || speed || 1
+        const userSilence = savedQuerySilence || 300
+        const userSpeed = savedQuerySpeed || speed || 1
         tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
       } else {
-        const userSilence = savedQueryAttr.silence || 100
-        const userSpeed = savedQueryAttr.speed || speed || 1
+        const userSilence = savedQuerySilence || 100
+        const userSpeed = savedQuerySpeed || speed || 1
         tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
       }
 
