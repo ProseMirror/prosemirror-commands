@@ -360,20 +360,20 @@ export function splitBlock(state, dispatch, view) {
     const leftText = $from.nodeBefore.text
 
     if (leftQuery.length && rightQuery.length && rightText.length) {
-      const {silence, style, speed} = rightQuery[0].attrs
+      const {silence, style, speed, pitch, tempo} = rightQuery[0].attrs
       tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(
         position,
         position + rightText.length,
-        state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed}))
+        state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed, pitch, tempo}))
         const lastCharacter = leftText.trim().slice(-1)
         if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
           const userSilence = savedQuerySilence || 300
           const userSpeed = savedQuerySpeed || speed || 1
-          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
         } else {
           const userSilence = savedQuerySilence || 100
           const userSpeed = savedQuerySpeed || speed || 1
-          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
         }
       if (state.selection instanceof TextSelection) {
         tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
@@ -394,15 +394,15 @@ export function splitBlock(state, dispatch, view) {
 
     if (leftQuery.length) {
       const lastCharacter = leftText.trim().slice(-1)
-      const {silence, style, speed} = leftQuery[0].attrs
+      const {silence, style, speed, pitch, tempo} = leftQuery[0].attrs
       if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
         const userSilence = savedQuerySilence || 300
         const userSpeed = savedQuerySpeed || speed || 1
-        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
       } else {
         const userSilence = savedQuerySilence || 100
         const userSpeed = savedQuerySpeed || speed || 1
-        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed}), {silence: userSilence, speed: userSpeed})
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
       }
 
       if (state.selection instanceof TextSelection) {
