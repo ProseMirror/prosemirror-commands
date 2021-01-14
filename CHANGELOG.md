@@ -1,3 +1,11 @@
+## 1.1.5 (2021-01-14)
+
+### Bug fixes
+
+`joinBackward` and `joinForward` will now, when the textblock after the cut can't be moved into the structure before the cut, try to just join the inline content onto the last child in the structure before the cut.
+
+`toggleMark` will now skip whitespace at the start and end of the selection when adding a mark.
+
 ## 1.1.4 (2020-04-15)
 
 ### Bug fixes
