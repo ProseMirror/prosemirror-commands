@@ -503,8 +503,15 @@ export function toggleMark(markType, attrs) {
         }
         for (let i = 0; i < ranges.length; i++) {
           let {$from, $to} = ranges[i]
-          if (has) tr.removeMark($from.pos, $to.pos, markType)
-          else tr.addMark($from.pos, $to.pos, markType.create(attrs))
+          if (has) {
+            tr.removeMark($from.pos, $to.pos, markType)
+          } else {
+            let from = $from.pos, to = $to.pos, start = $from.nodeAfter, end = $to.nodeBefore
+            let spaceStart = start && start.isText ? /^\s*/.exec(start.text)[0].length : 0
+            let spaceEnd = end && end.isText ? /\s*$/.exec(end.text)[0].length : 0
+            if (from + spaceStart < to) { from += spaceStart; to -= spaceEnd }
+            tr.addMark(from, to, markType.create(attrs))
+          }
         }
         dispatch(tr.scrollIntoView())
       }

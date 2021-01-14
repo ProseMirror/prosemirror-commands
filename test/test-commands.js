@@ -463,3 +463,42 @@ describe("autoJoin", () => {
            autoJoin(lift, ["bullet_list"]),
            doc(ul(li(p("a")), li(p("b")), li(p("c"))))))
 })
+
+describe("toggleMark", () => {
+  let toggleEm = toggleMark(schema.marks.em), toggleStrong = toggleMark(schema.marks.strong)
+
+  it("can add a mark", () => {
+    apply(doc(p("one <a>two<b>")), toggleEm,
+          doc(p("one ", em("two"))))
+  })
+
+  it("can stack marks", () => {
+    apply(doc(p("one <a>tw", strong("o<b>"))), toggleEm,
+          doc(p("one ", em("tw", strong("o")))))
+  })
+
+  it("can remove marks", () => {
+    apply(doc(p(em("one <a>two<b>"))), toggleEm,
+          doc(p(em("one "), "two")))
+  })
+
+  it("can toggle pending marks", () => {
+    let state = mkState(doc(p("hell<a>o")))
+    toggleEm(state, tr => state = state.apply(tr))
+    ist(state.storedMarks.length, 1)
+    toggleStrong(state, tr => state = state.apply(tr))
+    ist(state.storedMarks.length, 2)
+    toggleEm(state, tr => state = state.apply(tr))
+    ist(state.storedMarks.length, 1)
+  })
+
+  it("skips whitespace at selection ends when adding marks", () => {
+    apply(doc(p("one<a> two  <b>three")), toggleEm,
+          doc(p("one ", em("two"), "  three")))
+  })
+
+  it("doesn't skip whitespace-only selections", () => {
+    apply(doc(p("one<a> <b>two")), toggleEm,
+          doc(p("one", em(" "), "two")))
+  })
+})
