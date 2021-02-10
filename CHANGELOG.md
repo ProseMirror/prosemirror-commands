@@ -1,3 +1,9 @@
+## 1.1.6 (2021-02-10)
+
+### Bug fixes
+
+Improve behavior of enter when the entire document is selected.
+
 ## 1.1.5 (2021-01-14)
 
 ### Bug fixes
