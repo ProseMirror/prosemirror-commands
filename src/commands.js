@@ -260,9 +260,9 @@ export function exitCode(state, dispatch) {
 // If a block node is selected, create an empty paragraph before (if
 // it is its parent's first child) or after it.
 export function createParagraphNear(state, dispatch) {
-  let {$from, $to} = state.selection
-  if ($from.parent.inlineContent || $to.parent.inlineContent) return false
-  let type = defaultBlockAt($from.parent.contentMatchAt($to.indexAfter()))
+  let sel = state.selection, {$from, $to} = sel
+  if (!(sel instanceof NodeSelection) || $from.parent.inlineContent) return false
+  let type = defaultBlockAt($to.parent.contentMatchAt($to.indexAfter()))
   if (!type || !type.isTextblock) return false
   if (dispatch) {
     let side = (!$from.parentOffset && $to.index() < $to.parent.childCount ? $from : $to).pos
@@ -308,7 +308,7 @@ export function splitBlock(state, dispatch) {
   if (dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
-    if (state.selection instanceof TextSelection) tr.deleteSelection()
+    if (state.selection instanceof TextSelection || state.selection instanceof AllSelection) tr.deleteSelection()
     let deflt = $from.depth == 0 ? null : defaultBlockAt($from.node(-1).contentMatchAt($from.indexAfter(-1)))
     let types = atEnd && deflt ? [{type: deflt}] : null
     let can = canSplit(tr.doc, tr.mapping.map($from.pos), 1, types)
