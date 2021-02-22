@@ -261,7 +261,7 @@ export function exitCode(state, dispatch) {
 // it is its parent's first child) or after it.
 export function createParagraphNear(state, dispatch) {
   let sel = state.selection, {$from, $to} = sel
-  if (!(sel instanceof NodeSelection) || $from.parent.inlineContent) return false
+  if (sel instanceof AllSelection || $from.parent.inlineContent || $to.parent.inlineContent) return false
   let type = defaultBlockAt($to.parent.contentMatchAt($to.indexAfter()))
   if (!type || !type.isTextblock) return false
   if (dispatch) {
