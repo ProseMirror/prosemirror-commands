@@ -1,3 +1,9 @@
+## 1.1.7 (2021-02-22)
+
+### Bug fixes
+
+Fix a regression where `createParagraphNear` no longer fired for gap cursor selections.
+
 ## 1.1.6 (2021-02-10)
 
 ### Bug fixes
