@@ -1,3 +1,9 @@
+## 1.1.8 (2021-05-22)
+
+### Bug fixes
+
+Fix a crash in `splitBlock` that occurred with certain types of schemas.
+
 ## 1.1.7 (2021-02-22)
 
 ### Bug fixes
