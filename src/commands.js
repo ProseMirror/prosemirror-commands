@@ -318,9 +318,11 @@ export function splitBlock(state, dispatch) {
     }
     if (can) {
       tr.split(tr.mapping.map($from.pos), 1, types)
-      if (!atEnd && !$from.parentOffset && $from.parent.type != deflt &&
-          $from.node(-1).canReplace($from.index(-1), $from.indexAfter(-1), Fragment.from([deflt.create(), $from.parent])))
-        tr.setNodeMarkup(tr.mapping.map($from.before()), deflt)
+      if (!atEnd && !$from.parentOffset && $from.parent.type != deflt) {
+        let first = tr.mapping.map($from.before()), $first = tr.doc.resolve(first)
+        if ($from.parent.canReplaceWith($first.index(), $first.index() + 1, deflt))
+          tr.setNodeMarkup(tr.mapping.map($from.before()), deflt)
+      }
     }
     dispatch(tr.scrollIntoView())
   }
