@@ -320,7 +320,7 @@ export function splitBlock(state, dispatch) {
       tr.split(tr.mapping.map($from.pos), 1, types)
       if (!atEnd && !$from.parentOffset && $from.parent.type != deflt) {
         let first = tr.mapping.map($from.before()), $first = tr.doc.resolve(first)
-        if ($from.parent.canReplaceWith($first.index(), $first.index() + 1, deflt))
+        if ($from.node(-1).canReplaceWith($first.index(), $first.index() + 1, deflt))
           tr.setNodeMarkup(tr.mapping.map($from.before()), deflt)
       }
     }
