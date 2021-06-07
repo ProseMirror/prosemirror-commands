@@ -1,3 +1,9 @@
+## 1.1.9 (2021-06-07)
+
+### Bug fixes
+
+Fix a regression where `splitBlock` could crash when splitting at the end of a non-default block.
+
 ## 1.1.8 (2021-05-22)
 
 ### Bug fixes
