@@ -75,6 +75,24 @@ describe("joinBackward", () => {
 
   it("does nothing at start of doc", () =>
      apply(doc(p("<a>foo")), joinBackward, null))
+
+  it("can join single-textblock-child nodes", () => {
+    let s = new Schema({
+      nodes: {
+        text: {inline: true},
+        doc: {content: "block+"},
+        block: {content: "para"},
+        para: {content: "text*"}
+      }
+    })
+    let doc = s.node("doc", null, [
+      s.node("block", null, [s.node("para", null, [s.text("a")])]),
+      s.node("block", null, [s.node("para", null, [s.text("b")])])
+    ])
+    let state = EditorState.create({doc, selection: TextSelection.near(doc.resolve(7))})
+    ist(joinBackward(state, tr => state = state.apply(tr)))
+    ist(state.doc.toString(), "doc(block(para(\"ab\")))")
+  })
 })
 
 describe("selectNodeBackward", () => {

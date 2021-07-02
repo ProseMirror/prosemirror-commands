@@ -61,9 +61,11 @@ export function joinBackward(state, dispatch, view) {
   return false
 }
 
-function textblockAt(node, side) {
-  for (; node; node = (side == "start" ? node.firstChild : node.lastChild))
+function textblockAt(node, side, only) {
+  for (; node; node = (side == "start" ? node.firstChild : node.lastChild)) {
     if (node.isTextblock) return true
+    if (only && node.childCount != 1) return false
+  }
   return false
 }
 
@@ -405,19 +407,21 @@ function deleteBarrier(state, $cut, dispatch) {
     return true
   }
 
-  if (canDelAfter && after.isTextblock && textblockAt(before, "end")) {
+  if (canDelAfter && textblockAt(after, "start", true) && textblockAt(before, "end")) {
     let at = before, wrap = []
     for (;;) {
       wrap.push(at)
       if (at.isTextblock) break
       at = at.lastChild
     }
-    if (at.canReplace(at.childCount, at.childCount, after.content)) {
+    let afterText = after, afterDepth = 1
+    for (; !afterText.isTextblock; afterText = afterText.firstChild) afterDepth++
+    if (at.canReplace(at.childCount, at.childCount, afterText.content)) {
       if (dispatch) {
         let end = Fragment.empty
         for (let i = wrap.length - 1; i >= 0; i--) end = Fragment.from(wrap[i].copy(end))
         let tr = state.tr.step(new ReplaceAroundStep($cut.pos - wrap.length, $cut.pos + after.nodeSize,
-                                                     $cut.pos + 1, $cut.pos + after.nodeSize - 1,
+                                                     $cut.pos + afterDepth, $cut.pos + after.nodeSize - afterDepth,
                                                      new Slice(end, wrap.length, 0), 0, true))
         dispatch(tr.scrollIntoView())
       }
