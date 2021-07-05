@@ -1,3 +1,9 @@
+## 1.1.10 (2021-07-05)
+
+### Bug fixes
+
+Make `joinBackward` capable of joining textblocks wrapped in parent nodes when the parent nodes themselves can't be joined (for example two list items which allow only a single paragraph).
+
 ## 1.1.9 (2021-06-07)
 
 ### Bug fixes
