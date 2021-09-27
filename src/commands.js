@@ -609,6 +609,7 @@ export let pcBaseKeymap = {
   "Mod-Enter": exitCode,
   "Backspace": backspace,
   "Mod-Backspace": backspace,
+  "Shift-Backspace": backspace,
   "Delete": del,
   "Mod-Delete": del,
   "Mod-a": selectAll
