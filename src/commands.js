@@ -576,7 +576,7 @@ export function autoJoin(command, isJoinable) {
     let types = isJoinable
     isJoinable = node => types.indexOf(node.type.name) > -1
   }
-  return (state, dispatch) => command(state, dispatch && wrapDispatchForJoin(dispatch, isJoinable))
+  return (state, dispatch, view) => command(state, dispatch && wrapDispatchForJoin(dispatch, isJoinable), view)
 }
 
 // :: (...[(EditorState, ?(tr: Transaction), ?EditorView) → bool]) → (EditorState, ?(tr: Transaction), ?EditorView) → bool
