@@ -1,3 +1,11 @@
+## 1.1.11 (2021-10-06)
+
+### Bug fixes
+
+Add a binding for Shift-Backspace to the base keymap, so that shift or caps-lock won't interfere with backspace behavior.
+
+Fix an issue in `autoJoin` that made it ignore a third argument if it was passed one.
+
 ## 1.1.10 (2021-07-05)
 
 ### Bug fixes
