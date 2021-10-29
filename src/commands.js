@@ -631,7 +631,7 @@ export let macBaseKeymap = {
 for (let key in pcBaseKeymap) macBaseKeymap[key] = pcBaseKeymap[key]
 
 // declare global: os, navigator
-const mac = typeof navigator != "undefined" ? /Mac/.test(navigator.platform)
+const mac = typeof navigator != "undefined" ? /Mac|iP(hone|[oa]d)/.test(navigator.platform)
           : typeof os != "undefined" ? os.platform() == "darwin" : false
 
 // :: Object
