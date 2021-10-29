@@ -1,3 +1,9 @@
+## 1.1.12 (2021-10-29)
+
+### Bug fixes
+
+Fix issue where the default PC keymap was used on recent versions of iPhone or iPad operating systems.
+
 ## 1.1.11 (2021-10-06)
 
 ### Bug fixes
