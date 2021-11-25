@@ -385,6 +385,7 @@ function deleteBarrier(state, $cut, dispatch) {
 
   let canDelAfter = $cut.parent.canReplace($cut.index(), $cut.index() + 1)
   if (canDelAfter &&
+      !before.type.spec.keepAdjacent &&
       (conn = (match = before.contentMatchAt(before.childCount)).findWrapping(after.type)) &&
       match.matchType(conn[0] || after.type).validEnd) {
     if (dispatch) {
