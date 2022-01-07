@@ -423,6 +423,89 @@ export function splitBlock(state, dispatch, view) {
 }
 
 // :: (EditorState, ?(tr: Transaction)) → bool
+// Split the parent block of the selection. If the selection is a text
+// selection, also delete its content.
+export function splitBlockNotNewLine(state, dispatch, view) {
+  const {$from, $to, $cursor} = state.selection
+  const position = $cursor ? $cursor.pos : $to.pos
+  const tr = state.tr
+
+  let savedQueryAttr = localStorage.getItem('DEFAULT_QUERY_ATTR')
+  if (savedQueryAttr) {
+    savedQueryAttr = JSON.parse(savedQueryAttr)
+  } else {
+    savedQueryAttr = {}
+  }
+  const parent = $from.parent.type.name === 'paragraph' ? $from.parent : null
+  const paragraphActorId = parent ? parent.attrs.actor : null
+  let savedQuerySilence
+  let savedQuerySpeed
+  if (savedQueryAttr.hasOwnProperty(paragraphActorId)) {
+    savedQuerySilence = savedQueryAttr[paragraphActorId].silence
+    savedQuerySpeed = savedQueryAttr[paragraphActorId].speed
+  }
+
+  if ($from.nodeBefore && $to.nodeAfter) {
+    const leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    const rightQuery = $to.nodeAfter.marks.filter(mark => mark.type.name === 'query')
+    const rightText = $to.nodeAfter.text
+    const leftText = $from.nodeBefore.text
+
+    if (leftQuery.length && rightQuery.length && rightText.length) {
+      const {silence, style, speed, pitch, tempo} = rightQuery[0].attrs
+      tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(
+        position,
+        position + rightText.length,
+        state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed, pitch, tempo}))
+        const lastCharacter = leftText.trim().slice(-1)
+        if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
+          const userSilence = savedQuerySilence || 300
+          const userSpeed = savedQuerySpeed || speed || 1
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
+        } else {
+          const userSilence = savedQuerySilence || 100
+          const userSpeed = savedQuerySpeed || speed || 1
+          tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
+        }
+      if (state.selection instanceof TextSelection) {
+        tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
+      } else {
+        const node = view.state.schema.nodes.separator.create()
+        tr.insert(position, node)
+      }
+      dispatch(tr)
+    }
+  } else if ($from.nodeBefore && $to.nodeAfter === null) {
+    const leftQuery = $from.nodeBefore.marks.filter(mark => mark.type.name === 'query')
+    const leftText = $from.nodeBefore.text
+
+    if (leftQuery.length) {
+      const lastCharacter = leftText.trim().slice(-1)
+      const {speed, pitch, tempo} = leftQuery[0].attrs
+      if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
+        const userSilence = savedQuerySilence || 300
+        const userSpeed = savedQuerySpeed || speed || 1
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
+      } else {
+        const userSilence = savedQuerySilence || 100
+        const userSpeed = savedQuerySpeed || speed || 1
+        tr.updateQueryAttrs($from.pos - leftText.length, $from.pos, state.schema.marks.query.create({silence: userSilence, speed: userSpeed, pitch, tempo}), {silence: userSilence, speed: userSpeed, pitch, tempo})
+      }
+
+      if (state.selection instanceof TextSelection) {
+        tr.replaceSelectionWith(view.state.schema.nodes.separator.create(), false)
+      } else {
+        const node = view.state.schema.nodes.separator.create()
+        tr.insert(position, node)
+      }
+      dispatch(tr)
+    }
+  }
+  view.composing = false
+  return true
+}
+
+// :: (EditorState, ?(tr: Transaction)) → bool
 // Acts like [`splitBlock`](#commands.splitBlock), but without
 // resetting the set of active marks at the cursor.
 export function splitBlockKeepMarks(state, dispatch) {
@@ -785,3 +868,11 @@ const mac = typeof navigator != "undefined" ? /Mac/.test(navigator.platform)
 // [`pcBasekeymap`](#commands.pcBaseKeymap) or
 // [`macBaseKeymap`](#commands.macBaseKeymap).
 export let baseKeymap = mac ? macBaseKeymap : pcBaseKeymap
+
+export function reMappedKeymap(action, event) {
+  if (action === 'Enter') {
+    baseKeymap[action] = chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, event)
+  } else {
+    baseKeymap[action] = event
+  }
+}
