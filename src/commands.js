@@ -432,31 +432,29 @@ function deleteBarrier(state, $cut, dispatch) {
   return false
 }
 
-// : (EditorState, ?(tr: Transaction)) → bool
+function selectTextblockSide(side) {
+  return function(state, dispatch) {
+    let sel = state.selection, $pos = side < 0 ? sel.$from : sel.$to
+    let depth = $pos.depth
+    while ($pos.node(depth).isInline) {
+      if (!depth) return false
+      depth--
+    }
+    if (!$pos.node(depth).isTextblock) return false
+    if (dispatch)
+      dispatch(state.tr.setSelection(TextSelection.create(
+        state.doc, side < 0 ? $pos.start(depth) : $pos.end(depth))))
+    return true
+  }
+}
+
+// :: (EditorState, ?(tr: Transaction)) → bool
 // Moves the cursor to the start of current text block.
-// This is a workaround for Chrome and Safari on macOS, where Ctrl-a
-// gets stuck at the edge of inline nodes.
-// See https://discuss.prosemirror.net/t/shortcut-ctrl-a-ctrl-e-dont-work-on-macos-with-inline-node/
-function selectTextblockStart(state, dispatch) {
-  let $from = state.selection.$from
-  if (!$from.parent.type.isTextblock) return false
-  if (dispatch) dispatch(state.tr.setSelection(TextSelection.create(state.doc, $from.start())))
-  return true
-}
+export const selectTextblockStart = selectTextblockSide(-1)
 
-// : (EditorState, ?(tr: Transaction)) → bool
+// :: (EditorState, ?(tr: Transaction)) → bool
 // Moves the cursor to the end of current text block.
-// This is a workaround for Chrome and Safari on macOS, where Ctrl-e
-// gets stuck at the edge of inline nodes.
-// See https://discuss.prosemirror.net/t/shortcut-ctrl-a-ctrl-e-dont-work-on-macos-with-inline-node/
-function selectTextblockEnd(state, dispatch) {
-  let $to = state.selection.$to
-  if (!$to.parent.type.isTextblock) return false
-  if (dispatch) dispatch(state.tr.setSelection(TextSelection.create(state.doc, $to.end())))
-  return true
-}
-
-export { selectTextblockStart as __selectTextblockStart, selectTextblockEnd as __selectTextblockEnd }
+export const selectTextblockEnd = selectTextblockSide(1)
 
 // Parameterized commands
 
@@ -653,10 +651,13 @@ export let macBaseKeymap = {
   "Ctrl-Alt-Backspace": pcBaseKeymap["Mod-Delete"],
   "Alt-Delete": pcBaseKeymap["Mod-Delete"],
   "Alt-d": pcBaseKeymap["Mod-Delete"],
-  'Ctrl-a': selectTextblockStart,
-  'Ctrl-e': selectTextblockEnd
+  "Ctrl-a": selectTextblockStart,
+  "Ctrl-e": selectTextblockEnd
 }
 for (let key in pcBaseKeymap) macBaseKeymap[key] = pcBaseKeymap[key]
+
+pcBaseKeymap.Home = selectTextblockStart
+pcBaseKeymap.End = selectTextblockEnd
 
 // declare global: os, navigator
 const mac = typeof navigator != "undefined" ? /Mac|iP(hone|[oa]d)/.test(navigator.platform)

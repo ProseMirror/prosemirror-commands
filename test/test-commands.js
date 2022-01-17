@@ -5,7 +5,7 @@ const ist = require("ist")
 
 const {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
        wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
-       __selectTextblockStart: selectTextblockStart,  __selectTextblockEnd: selectTextblockEnd,
+       selectTextblockStart, selectTextblockEnd,
        selectParentNode, autoJoin, toggleMark} = require("..")
 
 function selFor(doc) {
@@ -539,7 +539,7 @@ describe('selectTextblockStart and selectTextblockEnd', () => {
           doc(p("one two<a>")))
   })
 
-  it("can move the cursor when the cursor across multiple text blocks", () => {
+  it("can move the cursor when the selection crosses multiple text blocks", () => {
     apply(doc(p("one <a>two"), p('three<b> four')), selectTextblockStart,
           doc(p("<a>one two"), p('three four')))
 

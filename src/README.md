@@ -26,6 +26,8 @@ These are mostly used to bind keys and define menu items.
 @splitBlockKeepMarks
 @selectParentNode
 @selectAll
+@selectTextblockStart
+@selectTextblockEnd
 @wrapIn
 @setBlockType
 @toggleMark
