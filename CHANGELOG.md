@@ -1,3 +1,15 @@
+## 1.2.0 (2022-01-17)
+
+### Bug fixes
+
+Add a workaround for a bug on macOS where Ctrl-a and Ctrl-e getting stuck at the edge of inline nodes.
+
+### New features
+
+The new `selectTextblockEnd` and `selectTextblockStart` commands move the cursor to the start/end of the textblock, when inside one.
+
+Ctrl-a/e on macOS and Home/End on other platforms are now bound to `selectTextblockEnd` and `selectTextblockStart`.
+
 ## 1.1.12 (2021-10-29)
 
 ### Bug fixes
