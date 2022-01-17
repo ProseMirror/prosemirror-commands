@@ -432,7 +432,7 @@ function deleteBarrier(state, $cut, dispatch) {
   return false
 }
 
-// :: (EditorState, ?(tr: Transaction)) → bool
+// : (EditorState, ?(tr: Transaction)) → bool
 // Moves the cursor to the start of current text block.
 // This is a workaround for Chrome and Safari on macOS, where Ctrl-a
 // gets stuck at the edge of inline nodes.
@@ -444,7 +444,7 @@ function selectTextblockStart(state, dispatch) {
   return true
 }
 
-// :: (EditorState, ?(tr: Transaction)) → bool
+// : (EditorState, ?(tr: Transaction)) → bool
 // Moves the cursor to the end of current text block.
 // This is a workaround for Chrome and Safari on macOS, where Ctrl-e
 // gets stuck at the edge of inline nodes.
