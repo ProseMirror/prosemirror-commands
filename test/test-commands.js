@@ -5,6 +5,7 @@ const ist = require("ist")
 
 const {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
        wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
+       __selectTextblockStart: selectTextblockStart,  __selectTextblockEnd: selectTextblockEnd,
        selectParentNode, autoJoin, toggleMark} = require("..")
 
 function selFor(doc) {
@@ -518,5 +519,31 @@ describe("toggleMark", () => {
   it("doesn't skip whitespace-only selections", () => {
     apply(doc(p("one<a> <b>two")), toggleEm,
           doc(p("one", em(" "), "two")))
+  })
+})
+
+describe('selectTextblockStart and selectTextblockEnd', () => {
+  it("can move the cursor when the selection is empty", () => {
+    apply(doc(p("one <a>two")), selectTextblockStart,
+          doc(p("<a>one two")))
+
+    apply(doc(p("one <a>two")), selectTextblockEnd,
+          doc(p("one two<a>")))
+  })
+
+  it("can move the cursor when the selection is not empty", () => {
+    apply(doc(p("one <a>two<b>")), selectTextblockStart,
+          doc(p("<a>one two")))
+
+    apply(doc(p("one <a>two<b>")), selectTextblockEnd,
+          doc(p("one two<a>")))
+  })
+
+  it("can move the cursor when the cursor across multiple text blocks", () => {
+    apply(doc(p("one <a>two"), p('three<b> four')), selectTextblockStart,
+          doc(p("<a>one two"), p('three four')))
+
+    apply(doc(p("one <a>two"), p('three<b> four')), selectTextblockEnd,
+          doc(p("one two"), p('three four<a>')))
   })
 })

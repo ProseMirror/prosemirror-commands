@@ -432,6 +432,32 @@ function deleteBarrier(state, $cut, dispatch) {
   return false
 }
 
+// :: (EditorState, ?(tr: Transaction)) → bool
+// Moves the cursor to the start of current text block.
+// This is a workaround for Chrome and Safari on macOS, where Ctrl-a
+// gets stuck at the edge of inline nodes.
+// See https://discuss.prosemirror.net/t/shortcut-ctrl-a-ctrl-e-dont-work-on-macos-with-inline-node/
+function selectTextblockStart(state, dispatch) {
+  let $from = state.selection.$from
+  if (!$from.parent.type.isTextblock) return false
+  if (dispatch) dispatch(state.tr.setSelection(TextSelection.create(state.doc, $from.start())))
+  return true
+}
+
+// :: (EditorState, ?(tr: Transaction)) → bool
+// Moves the cursor to the end of current text block.
+// This is a workaround for Chrome and Safari on macOS, where Ctrl-e
+// gets stuck at the edge of inline nodes.
+// See https://discuss.prosemirror.net/t/shortcut-ctrl-a-ctrl-e-dont-work-on-macos-with-inline-node/
+function selectTextblockEnd(state, dispatch) {
+  let $to = state.selection.$to
+  if (!$to.parent.type.isTextblock) return false
+  if (dispatch) dispatch(state.tr.setSelection(TextSelection.create(state.doc, $to.end())))
+  return true
+}
+
+export { selectTextblockStart as __selectTextblockStart, selectTextblockEnd as __selectTextblockEnd }
+
 // Parameterized commands
 
 // :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
@@ -626,7 +652,9 @@ export let macBaseKeymap = {
   "Ctrl-d": pcBaseKeymap["Delete"],
   "Ctrl-Alt-Backspace": pcBaseKeymap["Mod-Delete"],
   "Alt-Delete": pcBaseKeymap["Mod-Delete"],
-  "Alt-d": pcBaseKeymap["Mod-Delete"]
+  "Alt-d": pcBaseKeymap["Mod-Delete"],
+  'Ctrl-a': selectTextblockStart,
+  'Ctrl-e': selectTextblockEnd
 }
 for (let key in pcBaseKeymap) macBaseKeymap[key] = pcBaseKeymap[key]
 
