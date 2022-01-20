@@ -1,3 +1,9 @@
+## 1.2.1 (2022-01-20)
+
+### Bug fixes
+
+Fix an issue where `joinBackward` and `joinForward` would return true when activated with the cursor in an empty but undeletable block, but not make any change.
+
 ## 1.2.0 (2022-01-17)
 
 ### Bug fixes
