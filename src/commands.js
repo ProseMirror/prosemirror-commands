@@ -1,4 +1,4 @@
-import {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep} from "prosemirror-transform"
+import {joinPoint, canJoin, findWrapping, liftTarget, canSplit, ReplaceAroundStep, replaceStep} from "prosemirror-transform"
 import {Slice, Fragment} from "prosemirror-model"
 import {Selection, TextSelection, NodeSelection, AllSelection} from "prosemirror-state"
 
@@ -43,13 +43,16 @@ export function joinBackward(state, dispatch, view) {
   // selectable, delete the node below and select the one above.
   if ($cursor.parent.content.size == 0 &&
       (textblockAt(before, "end") || NodeSelection.isSelectable(before))) {
-    if (dispatch) {
-      let tr = state.tr.deleteRange($cursor.before(), $cursor.after())
-      tr.setSelection(textblockAt(before, "end") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)
-                      : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
-      dispatch(tr.scrollIntoView())
+    let delStep = replaceStep(state.doc, $cursor.before(), $cursor.after(), Slice.empty)
+    if (delStep.slice.size < delStep.to - delStep.from) {
+      if (dispatch) {
+        let tr = state.tr.step(delStep)
+        tr.setSelection(textblockAt(before, "end") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)
+                        : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
+        dispatch(tr.scrollIntoView())
+      }
+      return true
     }
-    return true
   }
 
   // If the node before is an atom, delete it
@@ -124,13 +127,16 @@ export function joinForward(state, dispatch, view) {
   // selectable, delete the node above and select the one below.
   if ($cursor.parent.content.size == 0 &&
       (textblockAt(after, "start") || NodeSelection.isSelectable(after))) {
-    if (dispatch) {
-      let tr = state.tr.deleteRange($cursor.before(), $cursor.after())
-      tr.setSelection(textblockAt(after, "start") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos)), 1)
-                      : NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)))
-      dispatch(tr.scrollIntoView())
+    let delStep = replaceStep(state.doc, $cursor.before(), $cursor.after(), Slice.empty)
+    if (delStep.slice.size < delStep.to - delStep.from) {
+      if (dispatch) {
+        let tr = state.tr.step(delStep)
+        tr.setSelection(textblockAt(after, "start") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos)), 1)
+                        : NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)))
+        dispatch(tr.scrollIntoView())
+      }
+      return true
     }
-    return true
   }
 
   // If the next node is an atom, delete it

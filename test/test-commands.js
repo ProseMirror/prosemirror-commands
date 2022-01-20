@@ -94,6 +94,9 @@ describe("joinBackward", () => {
     ist(joinBackward(state, tr => state = state.apply(tr)))
     ist(state.doc.toString(), "doc(block(para(\"ab\")))")
   })
+
+  it("doesn't return true on empty blocks that can't be deleted", () =>
+    apply(doc(p("a"), ul(li(p("<a>"), ul(li("b"))))), joinBackward, null))
 })
 
 describe("selectNodeBackward", () => {
