@@ -1,3 +1,9 @@
+## 1.2.2 (2022-03-16)
+
+### Bug fixes
+
+Don't override behavior of Home and End keys in base keymap.
+
 ## 1.2.1 (2022-01-20)
 
 ### Bug fixes
