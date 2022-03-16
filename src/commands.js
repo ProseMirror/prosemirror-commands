@@ -662,9 +662,6 @@ export let macBaseKeymap = {
 }
 for (let key in pcBaseKeymap) macBaseKeymap[key] = pcBaseKeymap[key]
 
-pcBaseKeymap.Home = selectTextblockStart
-pcBaseKeymap.End = selectTextblockEnd
-
 // declare global: os, navigator
 const mac = typeof navigator != "undefined" ? /Mac|iP(hone|[oa]d)/.test(navigator.platform)
           : typeof os != "undefined" ? os.platform() == "darwin" : false
