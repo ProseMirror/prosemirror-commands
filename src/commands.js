@@ -306,7 +306,6 @@ function newLine (state, dispatch, forwardCursor) {
   if (dispatch) {
     let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
-    
     if (state.selection instanceof TextSelection) tr.deleteSelection()
     let deflt = $from.depth == 0 ? null : defaultBlockAt($from.node(-1).contentMatchAt($from.indexAfter(-1)))
     let types = atEnd && deflt ? [{type: deflt}] : null
@@ -316,7 +315,10 @@ function newLine (state, dispatch, forwardCursor) {
       can = true
     }
     if (can) {
-      tr.split(tr.mapping.map($from.pos) + (forwardCursor ? 1 : 0), 1, null)
+      if (types) {
+        types = [{type: deflt, attrs: {...$from.parent.attrs, id: nanoid()}}]
+      }
+      tr.split(tr.mapping.map($from.pos) + (forwardCursor ? 1 : 0), 1, types)
       if (forwardCursor) {
         tr.setSelection(TextSelection.create(tr.doc, $from.pos + 3))
       }
