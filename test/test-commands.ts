@@ -1,32 +1,36 @@
-const {Schema} = require("prosemirror-model")
-const {EditorState, Selection, TextSelection, NodeSelection} = require("prosemirror-state")
-const {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} = require("prosemirror-test-builder")
-const ist = require("ist")
+import {Schema, Node} from "prosemirror-model"
+import {EditorState, Selection, TextSelection, NodeSelection, Command} from "prosemirror-state"
+import {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} from "prosemirror-test-builder"
+import ist from "ist"
 
-const {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
-       wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
-       selectTextblockStart, selectTextblockEnd,
-       selectParentNode, autoJoin, toggleMark} = require("..")
+import {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
+        wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
+        selectTextblockStart, selectTextblockEnd,
+        selectParentNode, autoJoin, toggleMark} from "prosemirror-commands"
 
-function selFor(doc) {
-  let a = doc.tag.a
+function t(node: Node): {[name: string]: number} {
+  return (node as any).tag
+}
+
+function selFor(doc: Node) {
+  let a = t(doc).a
   if (a != null) {
     let $a = doc.resolve(a)
-    if ($a.parent.inlineContent) return new TextSelection($a, doc.tag.b != null ? doc.resolve(doc.tag.b) : undefined)
+    if ($a.parent.inlineContent) return new TextSelection($a, t(doc).b != null ? doc.resolve(t(doc).b) : undefined)
     else return new NodeSelection($a)
   }
   return Selection.atStart(doc)
 }
 
-function mkState(doc) {
+function mkState(doc: Node) {
   return EditorState.create({doc, selection: selFor(doc)})
 }
 
-function apply(doc, command, result) {
+function apply(doc: Node, command: Command, result: Node | null) {
   let state = mkState(doc)
   command(state, tr => state = state.apply(tr))
   ist(state.doc, result || doc, eq)
-  if (result && result.tag.a != null) ist(state.selection,  selFor(result), eq)
+  if (result && t(result).a != null) ist(state.selection,  selFor(result), eq)
 }
 
 describe("joinBackward", () => {
@@ -116,7 +120,7 @@ describe("deleteSelection", () => {
      apply(doc(p("f<a>oo"), p("ba<b>r")), deleteSelection, doc(p("fr"))))
 
   it("deletes node selections", () =>
-     apply(doc(p("foo"), "<a>", hr), deleteSelection, doc(p("foo"))))
+     apply(doc(p("foo"), "<a>", hr()), deleteSelection, doc(p("foo"))))
 
   it("moves selection after deleted node", () =>
      apply(doc(p("a"), "<a>", p("b"), blockquote(p("c"))), deleteSelection,
@@ -135,13 +139,13 @@ describe("joinForward", () => {
      apply(doc(p("x"), p("<a>"), h1("hi")), joinForward, doc(p("x"), h1("<a>hi"))))
 
   it("clears nodes from joined node that wouldn't be allowed in target node", () =>
-     apply(doc(pre("foo<a>"), p("bar", img)), joinForward, doc(pre("foo<a>bar"))))
+     apply(doc(pre("foo<a>"), p("bar", img())), joinForward, doc(pre("foo<a>bar"))))
 
   it("does nothing at the end of the document", () =>
      apply(doc(p("foo<a>")), joinForward, null))
 
   it("deletes a leaf node after the current block", () =>
-     apply(doc(p("foo<a>"), hr, p("bar")), joinForward, doc(p("foo"), p("bar"))))
+     apply(doc(p("foo<a>"), hr(), p("bar")), joinForward, doc(p("foo"), p("bar"))))
 
   it("pulls the next block into the current list item", () =>
      apply(doc(ul(li(p("a<a>")), li(p("b")))), joinForward,
@@ -172,12 +176,12 @@ describe("joinForward", () => {
            null))
 
   it("deletes a leaf node at the end of the document", () =>
-     apply(doc(p("there<a>"), hr), joinForward,
+     apply(doc(p("there<a>"), hr()), joinForward,
            doc(p("there"))))
 
   it("moves before it deletes a leaf node", () =>
-     apply(doc(blockquote(p("there<a>")), hr), joinForward,
-           doc(blockquote(p("there"), hr))))
+     apply(doc(blockquote(p("there<a>")), hr()), joinForward,
+           doc(blockquote(p("there"), hr()))))
 
   it("does nothing when it can't join", () =>
      apply(doc(p("foo<a>"), ul(li(p("bar"), ul(li(p("baz")))))), joinForward,
@@ -320,11 +324,11 @@ describe("splitBlock", () => {
       content: "heading block*"
     })
   })
-  function hDoc(a) {
+  function hDoc(a: number) {
     const hDoc = hSchema.node("doc", null, [
       hSchema.node("heading", {level: 1}, hSchema.text("foobar"))
     ])
-    hDoc.tag = {a}
+    ;(hDoc as any).tag = {a}
     return hDoc
   }
 
@@ -350,7 +354,7 @@ describe("splitBlock", () => {
       doc: {content: "para* section*"}
     }})
     let doc = s.node("doc", null, [s.node("para", null, [s.text("hello")])])
-    doc.tag = {a: 3}
+    ;(doc as any).tag = {a: 3}
     apply(doc, splitBlock,
           s.node("doc", null, [s.node("para", null, [s.text("he")]),
                                s.node("para", null, [s.text("llo")])]))
@@ -361,14 +365,14 @@ describe("splitBlockKeepMarks", () => {
   it("keeps marks when used after marked text", () => {
     let state = mkState(doc(p(strong("foo<a>"), "bar")))
     splitBlockKeepMarks(state, tr => state = state.apply(tr))
-    ist(state.storedMarks.length, 1)
+    ist(state.storedMarks!.length, 1)
   })
 
   it("preserves the stored marks", () => {
     let state = mkState(doc(p(em("foo<a>"))))
     toggleMark(schema.marks.strong)(state, tr => state = state.apply(tr))
     splitBlockKeepMarks(state, tr => state = state.apply(tr))
-    ist(state.storedMarks.length, 2)
+    ist(state.storedMarks!.length, 2)
   })
 })
 
@@ -395,13 +399,13 @@ describe("liftEmptyBlock", () => {
 
 describe("createParagraphNear", () => {
   it("creates a paragraph before a selected node at the start of the doc", () =>
-     apply(doc("<a>", hr, hr), createParagraphNear, doc(p(), hr, hr)))
+     apply(doc("<a>", hr(), hr()), createParagraphNear, doc(p(), hr(), hr())))
 
   it("creates a paragraph after a lone selected node", () =>
-     apply(doc("<a>", hr), createParagraphNear, doc(hr, p())))
+     apply(doc("<a>", hr()), createParagraphNear, doc(hr(), p())))
 
   it("creates a paragraph after selected nodes not at the start of the doc", () =>
-     apply(doc(p(), "<a>", hr), createParagraphNear, doc(p(), hr, p())))
+     apply(doc(p(), "<a>", hr()), createParagraphNear, doc(p(), hr(), p())))
 })
 
 describe("setBlockType", () => {
@@ -507,11 +511,11 @@ describe("toggleMark", () => {
   it("can toggle pending marks", () => {
     let state = mkState(doc(p("hell<a>o")))
     toggleEm(state, tr => state = state.apply(tr))
-    ist(state.storedMarks.length, 1)
+    ist(state.storedMarks!.length, 1)
     toggleStrong(state, tr => state = state.apply(tr))
-    ist(state.storedMarks.length, 2)
+    ist(state.storedMarks!.length, 2)
     toggleEm(state, tr => state = state.apply(tr))
-    ist(state.storedMarks.length, 1)
+    ist(state.storedMarks!.length, 1)
   })
 
   it("skips whitespace at selection ends when adding marks", () => {
