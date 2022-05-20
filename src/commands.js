@@ -600,12 +600,6 @@ export function wrapIn(nodeType, attrs) {
 
 export function setBlockTypePos(from, nodeType, attrs) {
   return function(state, dispatch) {
-    console.log('from')
-    console.log(from)
-    console.log('nodeType')
-    console.log(nodeType)
-    console.log('attrs')
-    console.log(attrs)
     let applicable = false
     state.doc.nodesBetween(from, from, (node, pos) => {
       if (applicable) return false
@@ -733,7 +727,6 @@ export function updateQueryAttrs(type, attrs) {
 // marks](#state.EditorState.storedMarks) instead of a range of the
 // document.
 export function toggleMark(markType, attrs) {
-  console.log('toggleMark')
   return function(state, dispatch) {
     let {empty, $cursor, ranges} = state.selection
     if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType)) return false
