@@ -315,9 +315,7 @@ function newLine (state, dispatch, forwardCursor) {
       can = true
     }
     if (can) {
-      if (types) {
-        types = [{type: deflt, attrs: {...$from.parent.attrs, id: nanoid()}}]
-      }
+      types = [{type: deflt, attrs: {...$from.parent.attrs, id: nanoid()}}]
       tr.split(tr.mapping.map($from.pos) + (forwardCursor ? 1 : 0), 1, types)
       if (forwardCursor) {
         tr.setSelection(TextSelection.create(tr.doc, $from.pos + 3))
@@ -602,7 +600,12 @@ export function wrapIn(nodeType, attrs) {
 
 export function setBlockTypePos(from, nodeType, attrs) {
   return function(state, dispatch) {
-    
+    console.log('from')
+    console.log(from)
+    console.log('nodeType')
+    console.log(nodeType)
+    console.log('attrs')
+    console.log(attrs)
     let applicable = false
     state.doc.nodesBetween(from, from, (node, pos) => {
       if (applicable) return false
