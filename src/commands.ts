@@ -488,7 +488,10 @@ function markApplies(doc: Node, ranges: readonly SelectionRange[], type: MarkTyp
     let can = $from.depth == 0 ? doc.inlineContent && doc.type.allowsMarkType(type) : false
     doc.nodesBetween($from.pos, $to.pos, node => {
       if (can) return false
-      can = node.inlineContent && node.type.allowsMarkType(type)
+      if (node.inlineContent && node.type.allowsMarkType(type)) {
+        can = true;
+        return false;
+      }
     })
     if (can) return true
   }
