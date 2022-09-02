@@ -360,11 +360,12 @@ export function splitBlock(state, dispatch, view) {
     const leftText = $from.nodeBefore.text
 
     if (leftQuery.length && rightQuery.length && rightText.length) {
-      const {silence, style, speed, pitch, tempo} = rightQuery[0].attrs
+      const {silence, style, speed, pitch, tempo, styleTag} = rightQuery[0].attrs
       tr.removeMark(position, position + rightText.length, rightQuery[0]).addMark(
         position,
         position + rightText.length,
-        state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed, pitch, tempo}))
+        state.schema.marks.query.create({id: nanoid(), silence: silence, style: style, speed: speed, pitch, tempo, styleTag})
+      )
         const lastCharacter = leftText.trim().slice(-1)
         if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?') {
           const userSilence = savedQuerySilence || 300
