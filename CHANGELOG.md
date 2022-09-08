@@ -1,3 +1,9 @@
+## 1.3.1 (2022-09-08)
+
+### Bug fixes
+
+Make sure `toggleMark` doesn't add marks to top nodes with non-inline content.
+
 ## 1.3.0 (2022-05-30)
 
 ### New features
