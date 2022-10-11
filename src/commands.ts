@@ -621,7 +621,8 @@ export const pcBaseKeymap: {[key: string]: Command} = {
   "Shift-Backspace": backspace,
   "Delete": del,
   "Mod-Delete": del,
-  "Mod-a": selectAll
+  "Mod-a": selectAll,
+  "Mod-A": selectAll
 }
 
 /// A copy of `pcBaseKeymap` that also binds **Ctrl-h** like Backspace,
@@ -630,13 +631,18 @@ export const pcBaseKeymap: {[key: string]: Command} = {
 /// Ctrl-Delete.
 export const macBaseKeymap: {[key: string]: Command} = {
   "Ctrl-h": pcBaseKeymap["Backspace"],
+  "Ctrl-H": pcBaseKeymap["Backspace"],
   "Alt-Backspace": pcBaseKeymap["Mod-Backspace"],
   "Ctrl-d": pcBaseKeymap["Delete"],
+  "Ctrl-D": pcBaseKeymap["Delete"],
   "Ctrl-Alt-Backspace": pcBaseKeymap["Mod-Delete"],
   "Alt-Delete": pcBaseKeymap["Mod-Delete"],
   "Alt-d": pcBaseKeymap["Mod-Delete"],
+  "Alt-D": pcBaseKeymap["Mod-Delete"],
   "Ctrl-a": selectTextblockStart,
-  "Ctrl-e": selectTextblockEnd
+  "Ctrl-A": selectTextblockStart,
+  "Ctrl-e": selectTextblockEnd,
+  "Ctrl-E": selectTextblockEnd
 }
 for (let key in pcBaseKeymap) (macBaseKeymap as any)[key] = pcBaseKeymap[key]
 
