@@ -464,20 +464,29 @@ export function wrapIn(nodeType: NodeType, attrs: Attrs | null = null): Command 
 /// given node type with the given attributes.
 export function setBlockType(nodeType: NodeType, attrs: Attrs | null = null): Command {
   return function(state, dispatch) {
-    let {from, to} = state.selection
     let applicable = false
-    state.doc.nodesBetween(from, to, (node, pos) => {
-      if (applicable) return false
-      if (!node.isTextblock || node.hasMarkup(nodeType, attrs)) return
-      if (node.type == nodeType) {
-        applicable = true
-      } else {
-        let $pos = state.doc.resolve(pos), index = $pos.index()
-        applicable = $pos.parent.canReplaceWith(index, index + 1, nodeType)
-      }
-    })
+    for (let i = 0; i < state.selection.ranges.length && !applicable; i++) {
+      let {$from: {pos: from}, $to: {pos: to}} = state.selection.ranges[i]
+      state.doc.nodesBetween(from, to, (node, pos) => {
+        if (applicable) return false
+        if (!node.isTextblock || node.hasMarkup(nodeType, attrs)) return
+        if (node.type == nodeType) {
+          applicable = true
+        } else {
+          let $pos = state.doc.resolve(pos), index = $pos.index()
+          applicable = $pos.parent.canReplaceWith(index, index + 1, nodeType)
+        }
+      })
+    }
     if (!applicable) return false
-    if (dispatch) dispatch(state.tr.setBlockType(from, to, nodeType, attrs).scrollIntoView())
+    if (dispatch) {
+      let tr = state.tr
+      for (let i = 0; i < state.selection.ranges.length; i++) {
+        let {$from: {pos: from}, $to: {pos: to}} = state.selection.ranges[i]
+        tr.setBlockType(from, to, nodeType, attrs)
+      }
+      dispatch(tr.scrollIntoView())
+    }
     return true
   }
 }
