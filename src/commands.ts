@@ -3,12 +3,21 @@ import {joinPoint, canJoin, findWrapping, liftTarget, canSplit,
 import {Slice, Fragment, Node, NodeType, Attrs, MarkType, ResolvedPos, ContentMatch} from "prosemirror-model"
 import {Selection, EditorState, Transaction, TextSelection, NodeSelection,
         SelectionRange, AllSelection, Command} from "prosemirror-state"
+import {EditorView} from "prosemirror-view"
 
 /// Delete the selection, if there is one.
 export const deleteSelection: Command = (state, dispatch) => {
   if (state.selection.empty) return false
   if (dispatch) dispatch(state.tr.deleteSelection().scrollIntoView())
   return true
+}
+
+function atBlockStart(state: EditorState, view?: EditorView): ResolvedPos | null {
+  let {$cursor} = state.selection as TextSelection
+  if (!$cursor || (view ? !view.endOfTextblock("backward", state)
+                        : $cursor.parentOffset > 0))
+    return null
+  return $cursor
 }
 
 /// If the selection is empty and at the start of a textblock, try to
@@ -19,10 +28,8 @@ export const deleteSelection: Command = (state, dispatch) => {
 /// into a parent of the previous block. Will use the view for accurate
 /// (bidi-aware) start-of-textblock detection if given.
 export const joinBackward: Command = (state, dispatch, view) => {
-  let {$cursor} = state.selection as TextSelection
-  if (!$cursor || (view ? !view.endOfTextblock("backward", state)
-                        : $cursor.parentOffset > 0))
-    return false
+  let $cursor = atBlockStart(state, view)
+  if (!$cursor) return false
 
   let $cut = findCutBefore($cursor)
 
@@ -64,6 +71,52 @@ export const joinBackward: Command = (state, dispatch, view) => {
   return false
 }
 
+/// A more limited form of [`joinBackward`]($commands.joinBackward)
+/// that only tries to join the current textblock to the one before
+/// it, if the cursor is at the start of a textblock.
+export const joinTextblockBackward: Command = (state, dispatch, view) => {
+  let $cursor = atBlockStart(state, view)
+  if (!$cursor) return false
+  let $cut = findCutBefore($cursor)
+  return $cut ? joinTextblocksAround(state, $cut, dispatch) : false
+}
+
+/// A more limited form of [`joinForward`]($commands.joinForward)
+/// that only tries to join the current textblock to the one after
+/// it, if the cursor is at the end of a textblock.
+export const joinTextblockForward: Command = (state, dispatch, view) => {
+  let $cursor = atBlockEnd(state, view)
+  if (!$cursor) return false
+  let $cut = findCutAfter($cursor)
+  return $cut ? joinTextblocksAround(state, $cut, dispatch) : false
+}
+
+function joinTextblocksAround(state: EditorState, $cut: ResolvedPos, dispatch?: (tr: Transaction) => void) {
+  let before = $cut.nodeBefore!, beforeText = before, beforePos = $cut.pos - 1
+  for (; !beforeText.isTextblock; beforePos--) {
+    if (beforeText.type.spec.isolating) return false
+    let child = beforeText.lastChild
+    if (!child) return false
+    beforeText = child
+  }
+  let after = $cut.nodeAfter!, afterText = after, afterPos = $cut.pos + 1
+  for (; !afterText.isTextblock; afterPos++) {
+    if (afterText.type.spec.isolating) return false
+    let child = afterText.firstChild
+    if (!child) return false
+    afterText = child
+  }
+  let step = replaceStep(state.doc, beforePos, afterPos, Slice.empty) as ReplaceStep | null
+  if (!step || step.from != beforePos || step.slice.size >= afterPos - beforePos) return false
+  if (dispatch) {
+    let tr = state.tr.step(step)
+    tr.setSelection(TextSelection.create(tr.doc, beforePos))
+    dispatch(tr.scrollIntoView())
+  }
+  return true
+
+}
+
 function textblockAt(node: Node, side: "start" | "end", only = false) {
   for (let scan: Node | null = node; scan; scan = (side == "start" ? scan.firstChild : scan.lastChild)) {
     if (scan.isTextblock) return true
@@ -101,19 +154,24 @@ function findCutBefore($pos: ResolvedPos): ResolvedPos | null {
   return null
 }
 
+function atBlockEnd(state: EditorState, view?: EditorView): ResolvedPos | null {
+  let {$cursor} = state.selection as TextSelection
+  if (!$cursor || (view ? !view.endOfTextblock("forward", state)
+                        : $cursor.parentOffset < $cursor.parent.content.size))
+    return null
+  return $cursor
+}
+
 /// If the selection is empty and the cursor is at the end of a
 /// textblock, try to reduce or remove the boundary between that block
 /// and the one after it, either by joining them or by moving the other
 /// block closer to this one in the tree structure. Will use the view
 /// for accurate start-of-textblock detection if given.
 export const joinForward: Command = (state, dispatch, view) => {
-  let {$cursor} = state.selection as TextSelection
-  if (!$cursor || (view ? !view.endOfTextblock("forward", state)
-                        : $cursor.parentOffset < $cursor.parent.content.size))
-    return false
+  let $cursor = atBlockEnd(state, view)
+  if (!$cursor) return false
 
   let $cut = findCutAfter($cursor)
-
   // If there is no node after this, there's nothing to do
   if (!$cut) return false
 

@@ -3,7 +3,8 @@ import {EditorState, Selection, TextSelection, NodeSelection, Command} from "pro
 import {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} from "prosemirror-test-builder"
 import ist from "ist"
 
-import {joinBackward, selectNodeBackward, joinForward, selectNodeForward, deleteSelection, joinUp, joinDown, lift,
+import {joinBackward, joinTextblockBackward, selectNodeBackward, joinForward, joinTextblockForward, selectNodeForward,
+        deleteSelection, joinUp, joinDown, lift,
         wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
         selectTextblockStart, selectTextblockEnd,
         selectParentNode, autoJoin, toggleMark} from "prosemirror-commands"
@@ -103,6 +104,20 @@ describe("joinBackward", () => {
     apply(doc(p("a"), ul(li(p("<a>"), ul(li("b"))))), joinBackward, null))
 })
 
+describe("joinTextblockBackward", () => {
+  it("can join paragraphs", () =>
+     apply(doc(p("hi"), p("<a>there")), joinTextblockBackward, doc(p("hi<a>there"))))
+
+  it("can join if second block is wrapped", () =>
+     apply(doc(p("hi"), ul(li(p("<a>there")))), joinTextblockBackward, doc(p("hi<a>there"))))
+
+  it("can join if first block is wrapped", () =>
+     apply(doc(blockquote(p("hi")), p("<a>there")), joinTextblockBackward, doc(blockquote(p("hi<a>there")))))
+
+  it("does nothing at start of doc", () =>
+     apply(doc(p("<a>foo")), joinTextblockBackward, null))
+})
+
 describe("selectNodeBackward", () => {
   it("selects the node before the cut", () =>
      apply(doc(blockquote(p("a")), blockquote(p("<a>b"))), selectNodeBackward,
@@ -186,6 +201,20 @@ describe("joinForward", () => {
   it("does nothing when it can't join", () =>
      apply(doc(p("foo<a>"), ul(li(p("bar"), ul(li(p("baz")))))), joinForward,
            null))
+})
+
+describe("joinTextblockForward", () => {
+  it("can join paragraphs", () =>
+     apply(doc(p("hi<a>"), p("there")), joinTextblockForward, doc(p("hi<a>there"))))
+
+  it("can join if second block is wrapped", () =>
+     apply(doc(p("hi<a>"), ul(li(p("there")))), joinTextblockForward, doc(p("hi<a>there"))))
+
+  it("can join if first block is wrapped", () =>
+     apply(doc(blockquote(p("hi<a>")), p("there")), joinTextblockForward, doc(blockquote(p("hi<a>there")))))
+
+  it("does nothing at end of doc", () =>
+     apply(doc(p("foo<a>")), joinTextblockForward, null))
 })
 
 describe("selectNodeForward", () => {

@@ -13,8 +13,10 @@ These are mostly used to bind keys and define menu items.
 @deleteSelection
 @joinBackward
 @selectNodeBackward
+@joinTextblockBackward
 @joinForward
 @selectNodeForward
+@joinTextblockForward
 @joinUp
 @joinDown
 @lift
