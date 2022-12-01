@@ -1,3 +1,13 @@
+## 1.4.0 (2022-12-01)
+
+### Bug fixes
+
+Make `setBlockType` act on all selection ranges in selections that have them.
+
+### New features
+
+The new `joinTextblockForward` and `joinTextblockBackward` commands provide a more primitive command for delete/backspace behavior when you don't want the extra strategies implemented by `joinForward`/`joinBackward`.
+
 ## 1.3.1 (2022-09-08)
 
 ### Bug fixes
