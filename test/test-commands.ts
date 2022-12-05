@@ -5,7 +5,7 @@ import ist from "ist"
 
 import {joinBackward, joinTextblockBackward, selectNodeBackward, joinForward, joinTextblockForward, selectNodeForward,
         deleteSelection, joinUp, joinDown, lift,
-        wrapIn, splitBlock, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
+        wrapIn, splitBlock, splitBlockAs, splitBlockKeepMarks, liftEmptyBlock, createParagraphNear, setBlockType,
         selectTextblockStart, selectTextblockEnd,
         selectParentNode, autoJoin, toggleMark} from "prosemirror-commands"
 
@@ -388,6 +388,17 @@ describe("splitBlock", () => {
           s.node("doc", null, [s.node("para", null, [s.text("he")]),
                                s.node("para", null, [s.text("llo")])]))
   })
+})
+
+describe("splitBlockAs", () => {
+  it("splits to the appropriate type", () =>
+    apply(doc(p("on<a>e")), splitBlockAs(n => ({type: n.type.schema.nodes.heading, attrs: {level: 1}})),
+          doc(p("on"), h1("<a>e"))))
+
+  it("passes an end-of-block flag", () =>
+    apply(doc(p("one<a>")),
+          splitBlockAs((n, e) => e ? {type: n.type.schema.nodes.code_block} : null),
+          doc(p("one"), pre("<a>"))))
 })
 
 describe("splitBlockKeepMarks", () => {
