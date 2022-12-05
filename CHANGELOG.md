@@ -1,3 +1,9 @@
+## 1.5.0 (2022-12-05)
+
+### New features
+
+The new `splitBlockAs` command-builder allows you to pass in custom logic to determine the type of block that should be split off.
+
 ## 1.4.0 (2022-12-01)
 
 ### Bug fixes
