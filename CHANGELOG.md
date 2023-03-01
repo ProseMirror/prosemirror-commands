@@ -1,3 +1,9 @@
+## 1.5.1 (2023-03-01)
+
+### Bug fixes
+
+Fix `joinTextblockBackward` not applying when the textblock before was wrapped in another node.
+
 ## 1.5.0 (2022-12-05)
 
 ### New features
