@@ -107,7 +107,8 @@ function joinTextblocksAround(state: EditorState, $cut: ResolvedPos, dispatch?: 
     afterText = child
   }
   let step = replaceStep(state.doc, beforePos, afterPos, Slice.empty) as ReplaceStep | null
-  if (!step || step.from != beforePos || step.slice.size >= afterPos - beforePos) return false
+  if (!step || step.from != beforePos ||
+      step instanceof ReplaceStep && step.slice.size >= afterPos - beforePos) return false
   if (dispatch) {
     let tr = state.tr.step(step)
     tr.setSelection(TextSelection.create(tr.doc, beforePos))

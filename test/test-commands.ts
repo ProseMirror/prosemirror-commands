@@ -116,6 +116,11 @@ describe("joinTextblockBackward", () => {
 
   it("does nothing at start of doc", () =>
      apply(doc(p("<a>foo")), joinTextblockBackward, null))
+
+  it("can join if inside a nested block", () =>
+     apply(doc(blockquote(blockquote(p("hi")), p("<a>there"))),
+           joinTextblockBackward,
+           doc(blockquote(blockquote(p("hi<a>there"))))))
 })
 
 describe("selectNodeBackward", () => {
