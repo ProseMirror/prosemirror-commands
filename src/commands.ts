@@ -43,22 +43,25 @@ export const joinBackward: Command = (state, dispatch, view) => {
 
   let before = $cut.nodeBefore!
   // Apply the joining algorithm
-  if (!before.type.spec.isolating && deleteBarrier(state, $cut, dispatch))
-    return true
+  if (deleteBarrier(state, $cut, dispatch, -1)) return true
 
   // If the node below has no content and the node above is
   // selectable, delete the node below and select the one above.
   if ($cursor.parent.content.size == 0 &&
       (textblockAt(before, "end") || NodeSelection.isSelectable(before))) {
-    let delStep = replaceStep(state.doc, $cursor.before(), $cursor.after(), Slice.empty)
-    if (delStep && (delStep as ReplaceStep).slice.size < (delStep as ReplaceStep).to - (delStep as ReplaceStep).from) {
-      if (dispatch) {
-        let tr = state.tr.step(delStep)
-        tr.setSelection(textblockAt(before, "end") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)!
-                        : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
-        dispatch(tr.scrollIntoView())
+    for (let depth = $cursor.depth;; depth--) {
+      let delStep = replaceStep(state.doc, $cursor.before(depth), $cursor.after(depth), Slice.empty)
+      if (delStep && (delStep as ReplaceStep).slice.size < (delStep as ReplaceStep).to - (delStep as ReplaceStep).from) {
+        if (dispatch) {
+          let tr = state.tr.step(delStep)
+          tr.setSelection(textblockAt(before, "end")
+            ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)!
+            : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize))
+          dispatch(tr.scrollIntoView())
+        }
+        return true
       }
-      return true
+      if (depth == 1 || $cursor.node(depth - 1).childCount > 1) break
     }
   }
 
@@ -178,7 +181,7 @@ export const joinForward: Command = (state, dispatch, view) => {
 
   let after = $cut.nodeAfter!
   // Try the joining algorithm
-  if (deleteBarrier(state, $cut, dispatch)) return true
+  if (deleteBarrier(state, $cut, dispatch, 1)) return true
 
   // If the node above has no content and the node below is
   // selectable, delete the node above and select the one below.
@@ -436,12 +439,12 @@ function joinMaybeClear(state: EditorState, $pos: ResolvedPos, dispatch: ((tr: T
   return true
 }
 
-function deleteBarrier(state: EditorState, $cut: ResolvedPos, dispatch: ((tr: Transaction) => void) | undefined) {
+function deleteBarrier(state: EditorState, $cut: ResolvedPos, dispatch: ((tr: Transaction) => void) | undefined, dir: number) {
   let before = $cut.nodeBefore!, after = $cut.nodeAfter!, conn, match
-  if (before.type.spec.isolating || after.type.spec.isolating) return false
-  if (joinMaybeClear(state, $cut, dispatch)) return true
+  let isolated = before.type.spec.isolating || after.type.spec.isolating
+  if (!isolated && joinMaybeClear(state, $cut, dispatch)) return true
 
-  let canDelAfter = $cut.parent.canReplace($cut.index(), $cut.index() + 1)
+  let canDelAfter = !isolated && $cut.parent.canReplace($cut.index(), $cut.index() + 1)
   if (canDelAfter &&
       (conn = (match = before.contentMatchAt(before.childCount)).findWrapping(after.type)) &&
       match.matchType(conn[0] || after.type)!.validEnd) {
@@ -458,7 +461,7 @@ function deleteBarrier(state: EditorState, $cut: ResolvedPos, dispatch: ((tr: Tr
     return true
   }
 
-  let selAfter = Selection.findFrom($cut, 1)
+  let selAfter = after.type.spec.isolating || (dir > 0 && isolated) ? null : Selection.findFrom($cut, 1)
   let range = selAfter && selAfter.$from.blockRange(selAfter.$to), target = range && liftTarget(range)
   if (target != null && target >= $cut.depth) {
     if (dispatch) dispatch(state.tr.lift(range!, target).scrollIntoView())
