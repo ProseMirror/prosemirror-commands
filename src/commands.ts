@@ -591,10 +591,15 @@ export function toggleMark(markType: MarkType, attrs: Attrs | null = null): Comm
         else
           dispatch(state.tr.addStoredMark(markType.create(attrs)))
       } else {
-        let has = false, tr = state.tr
+        let has = false, entireSelHas = false, tr = state.tr
         for (let i = 0; !has && i < ranges.length; i++) {
           let {$from, $to} = ranges[i]
           has = state.doc.rangeHasMark($from.pos, $to.pos, markType)
+          entireSelHas = has
+          // its admittedly cumbersome to verify mark absence one char at a time
+          for (let j = $from.pos; has && has === entireSelHas && j < $to.pos; j++) {
+            entireSelHas = state.doc.rangeHasMark(j, j + 1, markType)
+          }
         }
         for (let i = 0; i < ranges.length; i++) {
           let {$from, $to} = ranges[i]
