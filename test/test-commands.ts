@@ -537,6 +537,7 @@ describe("autoJoin", () => {
 
 describe("toggleMark", () => {
   let toggleEm = toggleMark(schema.marks.em), toggleStrong = toggleMark(schema.marks.strong)
+  let toggleEm2 = toggleMark(schema.marks.em, null, {removeWhenPresent: false})
 
   it("can add a mark", () => {
     apply(doc(p("one <a>two<b>")), toggleEm,
@@ -571,6 +572,18 @@ describe("toggleMark", () => {
   it("doesn't skip whitespace-only selections", () => {
     apply(doc(p("one<a> <b>two")), toggleEm,
           doc(p("one", em(" "), "two")))
+  })
+
+  it("can add marks with remove-when-present off", () => {
+    apply(doc(p("<a>", em("one"), " two<b>")), toggleEm2,
+          doc(p(em("one two"))))
+    apply(doc(p("<a>three<b>")), toggleEm2,
+          doc(p(em("three"))))
+  })
+
+  it("can remove marks with remove-when-present off", () => {
+    apply(doc(p(em("o<a>ne two<b>"))), toggleEm2,
+          doc(p(em("o"), "ne two")))
   })
 })
 

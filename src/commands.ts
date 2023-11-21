@@ -580,7 +580,13 @@ function markApplies(doc: Node, ranges: readonly SelectionRange[], type: MarkTyp
 /// selection is empty, this applies to the [stored
 /// marks](#state.EditorState.storedMarks) instead of a range of the
 /// document.
-export function toggleMark(markType: MarkType, attrs: Attrs | null = null): Command {
+export function toggleMark(markType: MarkType, attrs: Attrs | null = null, options?: {
+  /// Controls whether, when part of the selected range has the mark
+  /// already and part doesn't, the mark is removed (`true`, the
+  /// default) or added (`false`).
+  removeWhenPresent: boolean
+}): Command {
+  let removeWhenPresent = (options && options.removeWhenPresent) !== false
   return function(state, dispatch) {
     let {empty, $cursor, ranges} = state.selection as TextSelection
     if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType)) return false
@@ -591,14 +597,22 @@ export function toggleMark(markType: MarkType, attrs: Attrs | null = null): Comm
         else
           dispatch(state.tr.addStoredMark(markType.create(attrs)))
       } else {
-        let has = false, tr = state.tr
-        for (let i = 0; !has && i < ranges.length; i++) {
-          let {$from, $to} = ranges[i]
-          has = state.doc.rangeHasMark($from.pos, $to.pos, markType)
+        let add, tr = state.tr
+        if (removeWhenPresent) {
+          add = !ranges.some(r => state.doc.rangeHasMark(r.$from.pos, r.$to.pos, markType))
+        } else {
+          add = !ranges.every(r => {
+            let missing = false
+            tr.doc.nodesBetween(r.$from.pos, r.$to.pos, (node, _, parent) => {
+              if (missing) return false
+              missing = !markType.isInSet(node.marks) && !!parent && parent.type.allowsMarkType(markType)
+            })
+            return !missing
+          })
         }
         for (let i = 0; i < ranges.length; i++) {
           let {$from, $to} = ranges[i]
-          if (has) {
+          if (!add) {
             tr.removeMark($from.pos, $to.pos, markType)
           } else {
             let from = $from.pos, to = $to.pos, start = $from.nodeAfter, end = $to.nodeBefore
