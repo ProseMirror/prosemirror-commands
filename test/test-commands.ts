@@ -585,6 +585,11 @@ describe("toggleMark", () => {
     apply(doc(p(em("o<a>ne two<b>"))), toggleEm2,
           doc(p(em("o"), "ne two")))
   })
+
+  it("can remove marks with trailing space when remove-when-present is off", () => {
+    apply(doc(p(em("o<a>ne two"), "  <b>")), toggleEm2,
+          doc(p(em("o"), "ne two  ")))
+  })
 })
 
 describe('selectTextblockStart and selectTextblockEnd', () => {

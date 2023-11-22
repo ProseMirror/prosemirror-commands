@@ -605,7 +605,8 @@ export function toggleMark(markType: MarkType, attrs: Attrs | null = null, optio
             let missing = false
             tr.doc.nodesBetween(r.$from.pos, r.$to.pos, (node, _, parent) => {
               if (missing) return false
-              missing = !markType.isInSet(node.marks) && !!parent && parent.type.allowsMarkType(markType)
+              missing = !markType.isInSet(node.marks) && !!parent && parent.type.allowsMarkType(markType) &&
+                !(node.isText && /^\s*$/.test(node.text!))
             })
             return !missing
           })
