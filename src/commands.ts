@@ -603,10 +603,11 @@ export function toggleMark(markType: MarkType, attrs: Attrs | null = null, optio
         } else {
           add = !ranges.every(r => {
             let missing = false
-            tr.doc.nodesBetween(r.$from.pos, r.$to.pos, (node, _, parent) => {
+            tr.doc.nodesBetween(r.$from.pos, r.$to.pos, (node, pos, parent) => {
               if (missing) return false
               missing = !markType.isInSet(node.marks) && !!parent && parent.type.allowsMarkType(markType) &&
-                !(node.isText && /^\s*$/.test(node.text!))
+                !(node.isText && /^\s*$/.test(node.textBetween(Math.max(0, r.$from.pos - pos),
+                                                               Math.min(node.nodeSize, r.$to.pos - pos))))
             })
             return !missing
           })

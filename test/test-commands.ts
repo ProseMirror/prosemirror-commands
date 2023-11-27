@@ -587,8 +587,8 @@ describe("toggleMark", () => {
   })
 
   it("can remove marks with trailing space when remove-when-present is off", () => {
-    apply(doc(p(em("o<a>ne two"), "  <b>")), toggleEm2,
-          doc(p(em("o"), "ne two  ")))
+    apply(doc(p(em("o<a>ne two"), "  <b>three")), toggleEm2,
+          doc(p(em("o"), "ne two  three")))
   })
 })
 
