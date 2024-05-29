@@ -354,7 +354,9 @@ export const liftEmptyBlock: Command = (state, dispatch) => {
 
 /// Create a variant of [`splitBlock`](#commands.splitBlock) that uses
 /// a custom function to determine the type of the newly split off block.
-export function splitBlockAs(splitNode?: (node: Node, atEnd: boolean) => {type: NodeType, attrs?: Attrs} | null): Command {
+export function splitBlockAs(
+  splitNode?: (node: Node, atEnd: boolean, $from: ResolvedPos) => {type: NodeType, attrs?: Attrs} | null
+): Command {
   return (state, dispatch) => {
     let {$from, $to} = state.selection
     if (state.selection instanceof NodeSelection && state.selection.node.isBlock) {
@@ -370,7 +372,7 @@ export function splitBlockAs(splitNode?: (node: Node, atEnd: boolean) => {type: 
       let tr = state.tr
       if (state.selection instanceof TextSelection || state.selection instanceof AllSelection) tr.deleteSelection()
       let deflt = $from.depth == 0 ? null : defaultBlockAt($from.node(-1).contentMatchAt($from.indexAfter(-1)))
-      let splitType = splitNode && splitNode($to.parent, atEnd)
+      let splitType = splitNode && splitNode($to.parent, atEnd, $from)
       let types = splitType ? [splitType] : atEnd && deflt ? [{type: deflt}] : undefined
       let can = canSplit(tr.doc, tr.mapping.map($from.pos), 1, types)
       if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, deflt ? [{type: deflt}] : undefined)) {
