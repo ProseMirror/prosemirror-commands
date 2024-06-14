@@ -562,17 +562,34 @@ export function setBlockType(nodeType: NodeType, attrs: Attrs | null = null): Co
   }
 }
 
-function markApplies(doc: Node, ranges: readonly SelectionRange[], type: MarkType) {
+function markApplies(doc: Node, ranges: readonly SelectionRange[], type: MarkType, enterAtoms: boolean) {
   for (let i = 0; i < ranges.length; i++) {
     let {$from, $to} = ranges[i]
     let can = $from.depth == 0 ? doc.inlineContent && doc.type.allowsMarkType(type) : false
-    doc.nodesBetween($from.pos, $to.pos, node => {
-      if (can) return false
+    doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
+      if (can || !enterAtoms && node.isAtom && node.isInline && pos >= $from.pos && pos + node.nodeSize <= $to.pos)
+        return false
       can = node.inlineContent && node.type.allowsMarkType(type)
     })
     if (can) return true
   }
   return false
+}
+
+function removeInlineAtoms(ranges: readonly SelectionRange[]): readonly SelectionRange[] {
+  let result = []
+  for (let i = 0; i < ranges.length; i++) {
+    let {$from, $to} = ranges[i]
+    $from.doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
+      if (node.isAtom && node.content.size && node.isInline && pos >= $from.pos && pos + node.nodeSize <= $to.pos) {
+        if (pos + 1 > $from.pos) result.push(new SelectionRange($from, $from.doc.resolve(pos + 1)))
+        $from = $from.doc.resolve(pos + 1 + node.content.size)
+        return false
+      }
+    })
+    if ($from.pos < $to.pos) result.push(new SelectionRange($from, $to))
+  }
+  return result
 }
 
 /// Create a command function that toggles the given mark with the
@@ -586,12 +603,18 @@ export function toggleMark(markType: MarkType, attrs: Attrs | null = null, optio
   /// Controls whether, when part of the selected range has the mark
   /// already and part doesn't, the mark is removed (`true`, the
   /// default) or added (`false`).
-  removeWhenPresent: boolean
+  removeWhenPresent?: boolean
+  /// When set to false, this will prevent the command from acting on
+  /// the content of inline nodes marked as
+  /// [atoms](#model.NodeSpec.atom) that are completely covered by a
+  /// selection range.
+  enterInlineAtoms?: boolean
 }): Command {
   let removeWhenPresent = (options && options.removeWhenPresent) !== false
+  let enterAtoms = (options && options.enterInlineAtoms) !== false
   return function(state, dispatch) {
     let {empty, $cursor, ranges} = state.selection as TextSelection
-    if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType)) return false
+    if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType, enterAtoms)) return false
     if (dispatch) {
       if ($cursor) {
         if (markType.isInSet(state.storedMarks || $cursor.marks()))
@@ -600,6 +623,7 @@ export function toggleMark(markType: MarkType, attrs: Attrs | null = null, optio
           dispatch(state.tr.addStoredMark(markType.create(attrs)))
       } else {
         let add, tr = state.tr
+        if (!enterAtoms) ranges = removeInlineAtoms(ranges)
         if (removeWhenPresent) {
           add = !ranges.some(r => state.doc.rangeHasMark(r.$from.pos, r.$to.pos, markType))
         } else {

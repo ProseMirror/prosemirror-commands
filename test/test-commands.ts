@@ -1,6 +1,6 @@
 import {Schema, Node} from "prosemirror-model"
 import {EditorState, Selection, TextSelection, NodeSelection, Command} from "prosemirror-state"
-import {schema, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} from "prosemirror-test-builder"
+import {schema, builders, eq, doc, blockquote, pre, h1, p, li, ol, ul, em, strong, hr, img} from "prosemirror-test-builder"
 import ist from "ist"
 
 import {joinBackward, joinTextblockBackward, selectNodeBackward, joinForward, joinTextblockForward, selectNodeForward,
@@ -589,6 +589,56 @@ describe("toggleMark", () => {
   it("can remove marks with trailing space when remove-when-present is off", () => {
     apply(doc(p(em("o<a>ne two"), "  <b>three")), toggleEm2,
           doc(p(em("o"), "ne two  three")))
+  })
+
+  function footnoteSchema() {
+    let schema = new Schema({
+      nodes: {
+        text: {inline: true},
+        doc: {content: "para+"},
+        footnote: {content: "text*", atom: true, inline: true},
+        para: {content: "(text | footnote)*"},
+      },
+      marks: {
+        em: {}
+      }
+    })
+    return builders(schema)
+  }
+
+  it("enters inline atoms by default", () => {
+    let {doc, para, footnote, em, schema} = footnoteSchema()
+    apply(doc(para("h<a>ello", footnote("okay"), "<b>")),
+          toggleMark(schema.marks.em),
+          doc(para("h", em("ello", footnote(em("okay"))))))
+  })
+
+  it("doesn't enter inline atoms to add a mark when told not to", () => {
+    let {doc, para, footnote, em, schema} = footnoteSchema()
+    apply(doc(para("h<a>ello", footnote("okay"), "<b>")),
+          toggleMark(schema.marks.em, null, {enterInlineAtoms: false}),
+          doc(para("h", em("ello", footnote("okay")))))
+  })
+
+  it("can apply styles inside inline atoms", () => {
+    let {doc, para, footnote, em, schema} = footnoteSchema()
+    apply(doc(para("hello", footnote("o<a>kay<b>"))),
+          toggleMark(schema.marks.em, null, {enterInlineAtoms: false}),
+          doc(para("hello", footnote("o", em("kay")))))
+  })
+
+  it("can add a mark even if already active inside an inline atom", () => {
+    let {doc, para, footnote, em, schema} = footnoteSchema()
+    apply(doc(para("h<a>ello", footnote(em("okay")), "<b>")),
+          toggleMark(schema.marks.em, null, {enterInlineAtoms: false}),
+          doc(para("h", em("ello", footnote(em("okay"))))))
+  })
+
+  it("doesn't enter inline atoms to remove a mark when told not to", () => {
+    let {doc, para, footnote, em, schema} = footnoteSchema()
+    apply(doc(para(em("h<a>ello", footnote(em("okay")), "<b>"))),
+          toggleMark(schema.marks.em, null, {enterInlineAtoms: false}),
+          doc(para(em("h"), "ello", footnote(em("okay")))))
   })
 })
 
