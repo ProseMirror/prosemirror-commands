@@ -1,3 +1,17 @@
+## 1.6.0 (2024-07-26)
+
+### Bug fixes
+
+Fix an issue where `joinBackward` couldn't lift the block with the cursor when the block before it was isolating.
+
+### New features
+
+`toggleMark` now takes an option that controls its behavior when only part of the selection has the mark already.
+
+The function given to `splitBlockAs` now has access to the split position via a third parameter.
+
+`toggleMark` now takes an `enterInlineAtoms` option that controls whether it descends into atom nodes.
+
 ## 1.5.2 (2023-05-17)
 
 ### Bug fixes
