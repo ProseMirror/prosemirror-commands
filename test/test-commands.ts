@@ -102,6 +102,10 @@ describe("joinBackward", () => {
 
   it("doesn't return true on empty blocks that can't be deleted", () =>
     apply(doc(p("a"), ul(li(p("<a>"), ul(li("b"))))), joinBackward, null))
+
+  it("doesn't join surrounding nodes of different types", () =>
+    apply(doc(ul(li(p("a"))), p("<a>"), ol(li(p("b")))), joinBackward,
+          doc(ul(li(p("a")), li(p("<a>"))), ol(li(p("b"))))))
 })
 
 describe("joinTextblockBackward", () => {

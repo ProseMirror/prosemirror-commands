@@ -456,8 +456,9 @@ function deleteBarrier(state: EditorState, $cut: ResolvedPos, dispatch: ((tr: Tr
         wrap = Fragment.from(conn[i].create(null, wrap))
       wrap = Fragment.from(before.copy(wrap))
       let tr = state.tr.step(new ReplaceAroundStep($cut.pos - 1, end, $cut.pos, end, new Slice(wrap, 1, 0), conn.length, true))
-      let joinAt = end + 2 * conn.length
-      if (canJoin(tr.doc, joinAt)) tr.join(joinAt)
+      let $joinAt = tr.doc.resolve(end + 2 * conn.length)
+      if ($joinAt.nodeAfter && $joinAt.nodeAfter.type == before.type &&
+          canJoin(tr.doc, $joinAt.pos)) tr.join($joinAt.pos)
       dispatch(tr.scrollIntoView())
     }
     return true
