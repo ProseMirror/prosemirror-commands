@@ -1,3 +1,13 @@
+## 1.6.1 (2024-10-11)
+
+### Bug fixes
+
+`joinBackward` will, when moving a node into a block, no longer join that block with the block after when the two have compatible content but aren't of the same type.
+
+Fix an issue in `splitBlock` that caused it to return true without doing anything when the schema makes splitting at the cursor impossible.
+
+Support implicit conversion between hard break nodes and newlines in the `joinForward` and `joinBackward` commands.
+
 ## 1.6.0 (2024-07-26)
 
 ### Bug fixes
