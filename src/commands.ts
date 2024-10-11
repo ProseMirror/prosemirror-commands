@@ -431,10 +431,7 @@ function joinMaybeClear(state: EditorState, $pos: ResolvedPos, dispatch: ((tr: T
   if (!$pos.parent.canReplace(index, index + 1) || !(after.isTextblock || canJoin(state.doc, $pos.pos)))
     return false
   if (dispatch)
-    dispatch(state.tr
-             .clearIncompatible($pos.pos, before.type, before.contentMatchAt(before.childCount))
-             .join($pos.pos)
-             .scrollIntoView())
+    dispatch(state.tr.join($pos.pos).scrollIntoView())
   return true
 }
 
