@@ -360,6 +360,10 @@ describe("splitBlock", () => {
       content: "inline*"
     }).update("doc", {
       content: "heading block*"
+    }).addToEnd("span", {
+      inline: true,
+      group: "inline",
+      content: "inline*"
     })
   })
   function hDoc(a: number) {
@@ -383,6 +387,17 @@ describe("splitBlock", () => {
              hSchema.node("heading", {level: 1}),
              hSchema.node("paragraph", null, hSchema.text("foobar"))
            ])))
+
+  it("can split an inline node", () => {
+    let d = hSchema.node("doc", null, [
+      hSchema.node("heading", {level: 1}, [
+        hSchema.node("span", null, hSchema.text("abcd"))])])
+    ;(d as any).tag = {a: 4}
+    apply(d, splitBlock, hSchema.node("doc", null, [
+      hSchema.node("heading", {level: 1}, hSchema.node("span", null, hSchema.text("ab"))),
+      hSchema.node("paragraph", null, hSchema.node("span", null, hSchema.text("cd")))
+    ]))
+  })
 
   it("prefers textblocks", () => {
     let s = new Schema({nodes: {

@@ -365,25 +365,38 @@ export function splitBlockAs(
       return true
     }
 
-    if (!$from.parent.isBlock) return false
+    if (!$from.depth) return false
+    let types: (null | {type: NodeType, attrs?: Attrs | null})[] = []
+    let splitDepth, deflt, atEnd = false, atStart = false
+    for (let d = $from.depth;; d--) {
+      let node = $from.node(d)
+      if (node.isBlock) {
+        atEnd = $from.end(d) == $from.pos + ($from.depth - d)
+        atStart = $from.start(d) == $from.pos - ($from.depth - d)
+        deflt = defaultBlockAt($from.node(d - 1).contentMatchAt($from.indexAfter(d - 1)))
+        let splitType = splitNode && splitNode($to.parent, atEnd, $from)
+        types.unshift(splitType || (atEnd && deflt ? {type: deflt} : null))
+        splitDepth = d
+        break
+      } else {
+        if (d == 1) return false
+        types.unshift(null)
+      }
+    }
 
-    let atEnd = $to.parentOffset == $to.parent.content.size
     let tr = state.tr
     if (state.selection instanceof TextSelection || state.selection instanceof AllSelection) tr.deleteSelection()
-    let deflt = $from.depth == 0 ? null : defaultBlockAt($from.node(-1).contentMatchAt($from.indexAfter(-1)))
-    let splitType = splitNode && splitNode($to.parent, atEnd, $from)
-    let types = splitType ? [splitType] : atEnd && deflt ? [{type: deflt}] : undefined
-    let can = canSplit(tr.doc, tr.mapping.map($from.pos), 1, types)
-    if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, deflt ? [{type: deflt}] : undefined)) {
-      if (deflt) types = [{type: deflt}]
-      can = true
+    let splitPos = tr.mapping.map($from.pos)
+    let can = canSplit(tr.doc, splitPos, types.length, types)
+    if (!can) {
+      types[0] = deflt ? {type: deflt} : null
+      can = canSplit(tr.doc, splitPos, types.length, types)
     }
-    if (!can) return false
-    tr.split(tr.mapping.map($from.pos), 1, types)
-    if (!atEnd && !$from.parentOffset && $from.parent.type != deflt) {
-      let first = tr.mapping.map($from.before()), $first = tr.doc.resolve(first)
-      if (deflt && $from.node(-1).canReplaceWith($first.index(), $first.index() + 1, deflt))
-        tr.setNodeMarkup(tr.mapping.map($from.before()), deflt)
+    tr.split(splitPos, types.length, types)
+    if (!atEnd && atStart && $from.node(splitDepth).type != deflt) {
+      let first = tr.mapping.map($from.before(splitDepth)), $first = tr.doc.resolve(first)
+      if (deflt && $from.node(splitDepth - 1).canReplaceWith($first.index(), $first.index() + 1, deflt))
+        tr.setNodeMarkup(tr.mapping.map($from.before(splitDepth)), deflt)
     }
     if (dispatch) dispatch(tr.scrollIntoView())
     return true
