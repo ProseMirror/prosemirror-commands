@@ -1,3 +1,9 @@
+## 1.6.2 (2024-10-24)
+
+### Bug fixes
+
+Make `splitBlock` smart enough to split blocks when the cursor is inside a nested inline node.
+
 ## 1.6.1 (2024-10-11)
 
 ### Bug fixes
