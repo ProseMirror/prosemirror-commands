@@ -74,7 +74,7 @@ export const joinBackward: Command = (state, dispatch, view) => {
   return false
 }
 
-/// A more limited form of [`joinBackward`]($commands.joinBackward)
+/// A more limited form of [`joinBackward`](#commands.joinBackward)
 /// that only tries to join the current textblock to the one before
 /// it, if the cursor is at the start of a textblock.
 export const joinTextblockBackward: Command = (state, dispatch, view) => {
@@ -84,7 +84,7 @@ export const joinTextblockBackward: Command = (state, dispatch, view) => {
   return $cut ? joinTextblocksAround(state, $cut, dispatch) : false
 }
 
-/// A more limited form of [`joinForward`]($commands.joinForward)
+/// A more limited form of [`joinForward`](#commands.joinForward)
 /// that only tries to join the current textblock to the one after
 /// it, if the cursor is at the end of a textblock.
 export const joinTextblockForward: Command = (state, dispatch, view) => {
