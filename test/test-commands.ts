@@ -593,6 +593,11 @@ describe("toggleMark", () => {
           doc(p("one", em(" "), "two")))
   })
 
+  it("includes whitespace when asked", () => {
+    apply(doc(p("one<a> two  <b>three")), toggleMark(schema.marks.em, null, {includeWhitespace: true}),
+          doc(p("one", em(" two  "), "three")))
+  })
+
   it("can add marks with remove-when-present off", () => {
     apply(doc(p("<a>", em("one"), " two<b>")), toggleEm2,
           doc(p(em("one two"))))
