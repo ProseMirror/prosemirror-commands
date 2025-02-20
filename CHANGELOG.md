@@ -1,3 +1,9 @@
+## 1.7.0 (2025-02-20)
+
+### New features
+
+`toggleMark` now accepts an `includeWhitespace` option that controls whether it affects leading/trailing space.
+
 ## 1.6.2 (2024-10-24)
 
 ### Bug fixes
