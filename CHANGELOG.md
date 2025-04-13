@@ -1,3 +1,9 @@
+## 1.7.1 (2025-04-13)
+
+### Bug fixes
+
+Fix a regression in `splitBlock` that would cause it to crash, rather than return false, when no split is possible.
+
 ## 1.7.0 (2025-02-20)
 
 ### New features
