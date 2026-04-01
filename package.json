@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/prosemirror/prosemirror-commands.git"
+    "url": "git+https://code.haverbeke.berlin/prosemirror/prosemirror-commands.git"
   },
   "dependencies": {
     "prosemirror-model": "^1.0.0",
